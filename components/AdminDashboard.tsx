@@ -528,7 +528,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                   <h3 className="font-bold text-brand-brown mb-4">Dernières Commandes</h3>
                   {orders.length === 0 ? (
-                    <p className="text-gray-400 text-sm">Aucune commande pour le moment.</p>
+                    <p className="text-gray-400 text-sm">Aucune commande pour le moment.
+                    </p>
                   ) : (
                     <div className="space-y-4">
                       {orders.slice(0, 5).map(order => (
@@ -1045,129 +1046,139 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <div className="animate-fade-in">
               <h2 className="text-2xl font-bold text-brand-brown mb-6">Informations du Restaurant</h2>
               
-              <form onSubmit={handleSaveSettings} className="bg-white p-8 rounded-xl shadow-sm border border-gray-100 space-y-6 max-w-2xl">
+              <form onSubmit={handleSaveSettings} className="bg-white p-8 rounded-xl shadow-sm border border-gray-100">
                 
-                {/* Section Image À Propos */}
-                <div>
-                  <h3 className="text-lg font-bold text-brand-orange mb-4 border-b pb-2">Image "Notre Histoire"</h3>
-                  <div className="space-y-4">
-                    <label className="flex flex-col items-center justify-center w-full h-48 border-2 border-brand-orange/30 border-dashed rounded-lg cursor-pointer bg-brand-orange/5 hover:bg-brand-orange/10 transition-colors">
-                      {localSettings.aboutImage ? (
-                        <div className="relative w-full h-full rounded-lg overflow-hidden group">
-                           <img src={localSettings.aboutImage} alt="À propos" className="w-full h-full object-cover" />
-                           <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                              <span className="text-white font-medium flex items-center gap-2"><Upload size={20} /> Changer l'image</span>
-                           </div>
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  
+                  {/* LEFT COLUMN: Main Info */}
+                  <div className="space-y-6">
+                    {/* Section Image À Propos */}
+                    <div>
+                      <h3 className="text-lg font-bold text-brand-orange mb-4 border-b pb-2">Image "Notre Histoire"</h3>
+                      <div className="space-y-4">
+                        <label className="flex flex-col items-center justify-center w-full h-48 border-2 border-brand-orange/30 border-dashed rounded-lg cursor-pointer bg-brand-orange/5 hover:bg-brand-orange/10 transition-colors">
+                          {localSettings.aboutImage ? (
+                            <div className="relative w-full h-full rounded-lg overflow-hidden group">
+                              <img src={localSettings.aboutImage} alt="À propos" className="w-full h-full object-cover" />
+                              <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <span className="text-white font-medium flex items-center gap-2"><Upload size={20} /> Changer l'image</span>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                <Upload className="w-10 h-10 mb-3 text-brand-orange" />
+                                <p className="mb-2 text-sm text-gray-500"><span className="font-semibold">Cliquez pour changer l'image</span></p>
+                                <p className="text-xs text-gray-500">JPG, PNG (MAX. 800x600px)</p>
+                            </div>
+                          )}
+                          <input type="file" className="hidden" accept="image/*" onChange={handleAboutImageUpload} />
+                        </label>
+                      </div>
+                    </div>
+
+                    <div>
+                      <h3 className="text-lg font-bold text-brand-orange mb-4 border-b pb-2">Coordonnées</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Numéro de Téléphone</label>
+                          <input 
+                            type="text" 
+                            value={localSettings.phoneNumber}
+                            onChange={(e) => setLocalSettings({...localSettings, phoneNumber: e.target.value})}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-orange focus:outline-none"
+                          />
                         </div>
-                      ) : (
-                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                            <Upload className="w-10 h-10 mb-3 text-brand-orange" />
-                            <p className="mb-2 text-sm text-gray-500"><span className="font-semibold">Cliquez pour changer l'image</span></p>
-                            <p className="text-xs text-gray-500">JPG, PNG (MAX. 800x600px)</p>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Adresse</label>
+                          <input 
+                            type="text" 
+                            value={localSettings.address}
+                            onChange={(e) => setLocalSettings({...localSettings, address: e.target.value})}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-orange focus:outline-none"
+                          />
                         </div>
-                      )}
-                      <input type="file" className="hidden" accept="image/*" onChange={handleAboutImageUpload} />
-                    </label>
-                  </div>
-                </div>
+                      </div>
+                    </div>
 
-                <div>
-                  <h3 className="text-lg font-bold text-brand-orange mb-4 border-b pb-2">Coordonnées</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Numéro de Téléphone</label>
-                      <input 
-                        type="text" 
-                        value={localSettings.phoneNumber}
-                        onChange={(e) => setLocalSettings({...localSettings, phoneNumber: e.target.value})}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-orange focus:outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Adresse</label>
-                      <input 
-                        type="text" 
-                        value={localSettings.address}
-                        onChange={(e) => setLocalSettings({...localSettings, address: e.target.value})}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-orange focus:outline-none"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="text-lg font-bold text-brand-orange mb-4 border-b pb-2">Horaires d'Ouverture</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Semaine (Lun-Sam)</label>
-                      <input 
-                        type="text" 
-                        value={localSettings.openingHoursWeek}
-                        onChange={(e) => setLocalSettings({...localSettings, openingHoursWeek: e.target.value})}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-orange focus:outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Dimanche</label>
-                      <input 
-                        type="text" 
-                        value={localSettings.openingHoursSunday}
-                        onChange={(e) => setLocalSettings({...localSettings, openingHoursSunday: e.target.value})}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-orange focus:outline-none"
-                      />
+                      <h3 className="text-lg font-bold text-brand-orange mb-4 border-b pb-2">Horaires d'Ouverture</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Semaine (Lun-Sam)</label>
+                          <input 
+                            type="text" 
+                            value={localSettings.openingHoursWeek}
+                            onChange={(e) => setLocalSettings({...localSettings, openingHoursWeek: e.target.value})}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-orange focus:outline-none"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Dimanche</label>
+                          <input 
+                            type="text" 
+                            value={localSettings.openingHoursSunday}
+                            onChange={(e) => setLocalSettings({...localSettings, openingHoursSunday: e.target.value})}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-orange focus:outline-none"
+                          />
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
 
-                <div>
-                  <h3 className="text-lg font-bold text-brand-orange mb-4 border-b pb-2">Réseaux Sociaux</h3>
-                  <div className="space-y-4">
+                  {/* RIGHT COLUMN: Social Media */}
+                  <div className="space-y-6">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Lien Facebook</label>
-                      <input 
-                        type="text" 
-                        value={localSettings.socialLinks.facebook}
-                        onChange={(e) => setLocalSettings({
-                          ...localSettings, 
-                          socialLinks: {...localSettings.socialLinks, facebook: e.target.value}
-                        })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-orange focus:outline-none"
-                        placeholder="https://facebook.com/..."
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Lien Instagram</label>
-                      <input 
-                        type="text" 
-                        value={localSettings.socialLinks.instagram}
-                        onChange={(e) => setLocalSettings({
-                          ...localSettings, 
-                          socialLinks: {...localSettings.socialLinks, instagram: e.target.value}
-                        })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-orange focus:outline-none"
-                        placeholder="https://instagram.com/..."
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Lien Twitter / X</label>
-                      <input 
-                        type="text" 
-                        value={localSettings.socialLinks.twitter}
-                        onChange={(e) => setLocalSettings({
-                          ...localSettings, 
-                          socialLinks: {...localSettings.socialLinks, twitter: e.target.value}
-                        })}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-orange focus:outline-none"
-                        placeholder="https://twitter.com/..."
-                      />
+                      <h3 className="text-lg font-bold text-brand-orange mb-4 border-b pb-2">Réseaux Sociaux</h3>
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Lien Facebook</label>
+                          <input 
+                            type="text" 
+                            value={localSettings.socialLinks.facebook}
+                            onChange={(e) => setLocalSettings({
+                              ...localSettings, 
+                              socialLinks: {...localSettings.socialLinks, facebook: e.target.value}
+                            })}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-orange focus:outline-none"
+                            placeholder="https://facebook.com/..."
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Lien Instagram</label>
+                          <input 
+                            type="text" 
+                            value={localSettings.socialLinks.instagram}
+                            onChange={(e) => setLocalSettings({
+                              ...localSettings, 
+                              socialLinks: {...localSettings.socialLinks, instagram: e.target.value}
+                            })}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-orange focus:outline-none"
+                            placeholder="https://instagram.com/..."
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Lien Twitter / X</label>
+                          <input 
+                            type="text" 
+                            value={localSettings.socialLinks.twitter}
+                            onChange={(e) => setLocalSettings({
+                              ...localSettings, 
+                              socialLinks: {...localSettings.socialLinks, twitter: e.target.value}
+                            })}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-orange focus:outline-none"
+                            placeholder="https://twitter.com/..."
+                          />
+                        </div>
+                      </div>
                     </div>
                   </div>
+
                 </div>
 
-                <div className="pt-4">
+                <div className="pt-8 border-t border-gray-100 mt-8">
                   <button 
                     type="submit" 
-                    className="w-full bg-brand-green text-white py-3 rounded-lg font-bold hover:bg-brand-brown transition-colors flex items-center justify-center gap-2"
+                    className="w-full bg-brand-green text-white py-4 rounded-lg font-bold hover:bg-brand-brown transition-colors flex items-center justify-center gap-2 shadow-lg"
                   >
                     <Save size={20} /> Enregistrer les modifications
                   </button>
