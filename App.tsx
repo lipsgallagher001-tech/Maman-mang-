@@ -9,7 +9,7 @@ import Contact from './components/Contact';
 import Footer from './components/Footer';
 import AdminDashboard from './components/AdminDashboard';
 import Reviews from './components/Reviews';
-import { PageView, Dish, Order, ContactMessage, Review, SiteSettings, OrderStatus } from './types';
+import { PageView, Dish, Order, ContactMessage, Review, SiteSettings, OrderStatus, SpecialtyItem } from './types';
 
 // Données initiales du menu déplacées ici pour être modifiables
 const INITIAL_MENU: Dish[] = [
@@ -69,6 +69,45 @@ const INITIAL_MENU: Dish[] = [
   }
 ];
 
+const INITIAL_SPECIALTIES: SpecialtyItem[] = [
+  {
+    id: '1',
+    name: "Djenkoumé (Pâte rouge)",
+    description: "La spécialité de la maison. Une pâte de maïs à la tomate savoureuse accompagnée de poulet frit.",
+    image: "https://picsum.photos/seed/djenkoume/400/300"
+  },
+  {
+    id: '2',
+    name: "Ayimolou (Riz & Haricot)",
+    description: "Le plat du peuple, sublimé par Maman avec un piment noir dont elle seule a le secret.",
+    image: "https://picsum.photos/seed/ayimolou/400/300"
+  },
+  {
+    id: '3',
+    name: "Foufou & Sauce Claire",
+    description: "De l'igname pilée à la main, servie avec une sauce légère au poisson frais.",
+    image: "https://picsum.photos/seed/foufou/400/300"
+  },
+  {
+    id: '4',
+    name: "Ablo & Poisson",
+    description: "Petites galettes de riz fermenté cuites à la vapeur, servies avec une sauce tomate pimentée.",
+    image: "https://picsum.photos/seed/ablo/400/300"
+  },
+  {
+    id: '5',
+    name: "Gboma Dessi",
+    description: "Sauce épinard riche en viande de boeuf et crevettes, accompagnée de pâte blanche.",
+    image: "https://picsum.photos/seed/gboma/400/300"
+  },
+  {
+    id: '6',
+    name: "Kom & Piment Noir",
+    description: "Pâte de maïs fermentée (Kenkey) avec des sardines frites et du piment shito.",
+    image: "https://picsum.photos/seed/kom/400/300"
+  }
+];
+
 const INITIAL_REVIEWS: Review[] = [
   {
     id: '1',
@@ -102,7 +141,8 @@ const INITIAL_SETTINGS: SiteSettings = {
     facebook: '#',
     instagram: '#',
     twitter: '#'
-  }
+  },
+  aboutImage: 'https://picsum.photos/seed/cook/600/800'
 };
 
 const INITIAL_GALLERY_IMAGES = [
@@ -124,6 +164,7 @@ const App: React.FC = () => {
   const [reviews, setReviews] = useState<Review[]>(INITIAL_REVIEWS);
   const [siteSettings, setSiteSettings] = useState<SiteSettings>(INITIAL_SETTINGS);
   const [galleryImages, setGalleryImages] = useState<string[]>(INITIAL_GALLERY_IMAGES);
+  const [specialties, setSpecialties] = useState<SpecialtyItem[]>(INITIAL_SPECIALTIES);
 
   // Actions pour le Dashboard
   const toggleDishAvailability = (id: string) => {
@@ -146,8 +187,18 @@ const App: React.FC = () => {
     setGalleryImages(newImages);
   };
 
+  const updateSpecialties = (newSpecialties: SpecialtyItem[]) => {
+    setSpecialties(newSpecialties);
+  };
+
   const handleAddDish = (newDish: Dish) => {
     setMenuItems(prev => [newDish, ...prev]);
+  };
+
+  const handleMarkMessageAsRead = (id: string) => {
+    setMessages(prev => prev.map(msg => 
+      msg.id === id ? { ...msg, read: true } : msg
+    ));
   };
 
   // Actions pour le Site Public
@@ -170,8 +221,8 @@ const App: React.FC = () => {
           <>
             <Hero onNavigate={setCurrentPage} />
             <Menu menuItems={menuItems} onAddOrder={handleAddOrder} />
-            <Services />
-            <About />
+            <Services specialties={specialties} />
+            <About image={siteSettings.aboutImage} />
             <Gallery images={galleryImages} />
             <Contact onSendMessage={handleAddMessage} settings={siteSettings} />
           </>
@@ -179,9 +230,9 @@ const App: React.FC = () => {
       case 'menu':
         return <Menu menuItems={menuItems} onAddOrder={handleAddOrder} />;
       case 'about':
-        return <About />;
+        return <About image={siteSettings.aboutImage} />;
       case 'services':
-        return <Services />;
+        return <Services specialties={specialties} />;
       case 'gallery':
         return <Gallery images={galleryImages} />;
       case 'reviews':
@@ -196,11 +247,14 @@ const App: React.FC = () => {
             messages={messages}
             settings={siteSettings}
             galleryImages={galleryImages}
+            specialties={specialties}
             onUpdateOrderStatus={updateOrderStatus}
             onToggleAvailability={toggleDishAvailability}
             onUpdateSettings={updateSiteSettings}
             onUpdateGallery={updateGalleryImages}
+            onUpdateSpecialties={updateSpecialties}
             onAddDish={handleAddDish}
+            onMarkMessageAsRead={handleMarkMessageAsRead}
             onNavigate={setCurrentPage}
           />
         );

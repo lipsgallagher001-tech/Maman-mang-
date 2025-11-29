@@ -18,6 +18,13 @@ export interface ServiceItem {
   icon: React.ReactNode;
 }
 
+export interface SpecialtyItem {
+  id: string;
+  name: string;
+  description: string;
+  image: string;
+}
+
 export type OrderStatus = 'pending' | 'cooking' | 'ready' | 'delivered' | 'cancelled';
 
 export interface Order {
@@ -61,4 +68,5 @@ export interface SiteSettings {
     instagram: string;
     twitter: string;
   };
+  aboutImage: string; // Nouvelle image pour la section À propos
 }

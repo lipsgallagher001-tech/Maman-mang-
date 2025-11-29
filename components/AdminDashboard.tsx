@@ -18,9 +18,12 @@ import {
   Trash2,
   PlusCircle,
   Plus,
-  Upload
+  Upload,
+  Mail,
+  MailOpen,
+  ChefHat
 } from 'lucide-react';
-import { Dish, Order, ContactMessage, PageView, OrderStatus, SiteSettings } from '../types';
+import { Dish, Order, ContactMessage, PageView, OrderStatus, SiteSettings, SpecialtyItem } from '../types';
 
 interface AdminDashboardProps {
   orders: Order[];
@@ -28,11 +31,14 @@ interface AdminDashboardProps {
   messages: ContactMessage[];
   settings: SiteSettings;
   galleryImages: string[];
+  specialties: SpecialtyItem[];
   onUpdateOrderStatus: (id: string, status: OrderStatus) => void;
   onToggleAvailability: (id: string) => void;
   onUpdateSettings: (settings: SiteSettings) => void;
   onUpdateGallery: (images: string[]) => void;
+  onUpdateSpecialties: (specialties: SpecialtyItem[]) => void;
   onAddDish: (dish: Dish) => void;
+  onMarkMessageAsRead: (id: string) => void;
   onNavigate: (page: PageView) => void;
 }
 
@@ -42,14 +48,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   messages, 
   settings,
   galleryImages,
+  specialties,
   onUpdateOrderStatus,
   onToggleAvailability,
   onUpdateSettings,
   onUpdateGallery,
+  onUpdateSpecialties,
   onAddDish,
+  onMarkMessageAsRead,
   onNavigate 
 }) => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'orders' | 'menu' | 'messages' | 'settings' | 'gallery'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'orders' | 'menu' | 'expertise' | 'gallery' | 'messages' | 'settings'>('overview');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [localSettings, setLocalSettings] = useState<SiteSettings>(settings);
   const [newImageUrl, setNewImageUrl] = useState('');
@@ -61,6 +70,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     description: '',
     image: '',
     category: 'plat' as const
+  });
+
+  // State pour nouvelle spécialité
+  const [newSpecialty, setNewSpecialty] = useState({
+    name: '',
+    description: '',
+    image: ''
   });
 
   // Mettre à jour les paramètres locaux si les props changent
@@ -96,6 +112,57 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const handleGalleryFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setNewImageUrl(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleAboutImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setLocalSettings(prev => ({ ...prev, aboutImage: reader.result as string }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSpecialtyImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setNewSpecialty(prev => ({ ...prev, image: reader.result as string }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleAddSpecialty = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newSpecialty.name) {
+      const specialty: SpecialtyItem = {
+        id: Date.now().toString(),
+        name: newSpecialty.name,
+        description: newSpecialty.description,
+        image: newSpecialty.image || 'https://picsum.photos/seed/specialty/400/300'
+      };
+      onUpdateSpecialties([...specialties, specialty]);
+      setNewSpecialty({ name: '', description: '', image: '' });
+    }
+  };
+
+  const handleRemoveSpecialty = (id: string) => {
+    onUpdateSpecialties(specialties.filter(s => s.id !== id));
   };
 
   const handleSubmitDish = (e: React.FormEvent) => {
@@ -142,9 +209,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     );
   }
 
-  // Calculs Stats
+  // Calculs Stats et Notifications
   const totalRevenue = orders.reduce((acc, order) => acc + (order.status !== 'cancelled' ? order.totalPrice : 0), 0);
   const pendingOrders = orders.filter(o => o.status === 'pending').length;
+  const unreadMessages = messages.filter(m => !m.read).length;
   
   // Plat populaire
   const dishCounts: Record<string, number> = {};
@@ -198,17 +266,30 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </button>
           <button 
             onClick={() => setActiveTab('orders')}
-            className={`flex items-center gap-3 w-full px-4 py-3 rounded-lg transition-colors ${activeTab === 'orders' ? 'bg-brand-orange text-white' : 'hover:bg-white/10 text-gray-300'}`}
+            className={`flex items-center gap-3 w-full px-4 py-3 rounded-lg transition-colors relative ${activeTab === 'orders' ? 'bg-brand-orange text-white' : 'hover:bg-white/10 text-gray-300'}`}
           >
-            <ShoppingBag size={20} /> 
-            Commandes
-            {pendingOrders > 0 && <span className="ml-auto bg-red-500 text-white text-xs px-2 py-1 rounded-full">{pendingOrders}</span>}
+            <div className="relative">
+              <ShoppingBag size={20} />
+              {pendingOrders > 0 && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-brand-brown animate-pulse"></span>}
+            </div>
+             Commandes
+            {pendingOrders > 0 && (
+              <span className="ml-auto bg-red-500 text-white text-xs px-2 py-1 rounded-full font-bold animate-pulse">
+                {pendingOrders}
+              </span>
+            )}
           </button>
           <button 
             onClick={() => setActiveTab('menu')}
             className={`flex items-center gap-3 w-full px-4 py-3 rounded-lg transition-colors ${activeTab === 'menu' ? 'bg-brand-orange text-white' : 'hover:bg-white/10 text-gray-300'}`}
           >
             <Utensils size={20} /> Gestion Menu
+          </button>
+          <button 
+            onClick={() => setActiveTab('expertise')}
+            className={`flex items-center gap-3 w-full px-4 py-3 rounded-lg transition-colors ${activeTab === 'expertise' ? 'bg-brand-orange text-white' : 'hover:bg-white/10 text-gray-300'}`}
+          >
+            <ChefHat size={20} /> Savoir-Faire
           </button>
           <button 
             onClick={() => setActiveTab('gallery')}
@@ -218,9 +299,14 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </button>
           <button 
             onClick={() => setActiveTab('messages')}
-            className={`flex items-center gap-3 w-full px-4 py-3 rounded-lg transition-colors ${activeTab === 'messages' ? 'bg-brand-orange text-white' : 'hover:bg-white/10 text-gray-300'}`}
+            className={`flex items-center gap-3 w-full px-4 py-3 rounded-lg transition-colors relative ${activeTab === 'messages' ? 'bg-brand-orange text-white' : 'hover:bg-white/10 text-gray-300'}`}
           >
-            <MessageSquare size={20} /> Messages
+            <div className="relative">
+              <MessageSquare size={20} />
+              {unreadMessages > 0 && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-brand-brown"></span>}
+            </div>
+            Messages
+            {unreadMessages > 0 && <span className="ml-auto bg-red-500 text-white text-xs px-2 py-1 rounded-full font-bold">{unreadMessages}</span>}
           </button>
           <button 
             onClick={() => setActiveTab('settings')}
@@ -250,9 +336,17 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
         {/* Mobile Nav Tabs */}
         <div className="lg:hidden flex overflow-x-auto bg-brand-brown text-white p-2 gap-2 sticky top-0 z-20">
           <button onClick={() => setActiveTab('overview')} className={`px-4 py-2 rounded-full whitespace-nowrap ${activeTab === 'overview' ? 'bg-brand-orange' : 'bg-white/10'}`}>Tableau</button>
-          <button onClick={() => setActiveTab('orders')} className={`px-4 py-2 rounded-full whitespace-nowrap ${activeTab === 'orders' ? 'bg-brand-orange' : 'bg-white/10'}`}>Commandes</button>
+          <button onClick={() => setActiveTab('orders')} className={`relative px-4 py-2 rounded-full whitespace-nowrap ${activeTab === 'orders' ? 'bg-brand-orange' : 'bg-white/10'}`}>
+            Commandes
+            {pendingOrders > 0 && <span className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full border border-white animate-pulse"></span>}
+          </button>
           <button onClick={() => setActiveTab('menu')} className={`px-4 py-2 rounded-full whitespace-nowrap ${activeTab === 'menu' ? 'bg-brand-orange' : 'bg-white/10'}`}>Menu</button>
+          <button onClick={() => setActiveTab('expertise')} className={`px-4 py-2 rounded-full whitespace-nowrap ${activeTab === 'expertise' ? 'bg-brand-orange' : 'bg-white/10'}`}>Savoir-Faire</button>
           <button onClick={() => setActiveTab('gallery')} className={`px-4 py-2 rounded-full whitespace-nowrap ${activeTab === 'gallery' ? 'bg-brand-orange' : 'bg-white/10'}`}>Galerie</button>
+          <button onClick={() => setActiveTab('messages')} className={`relative px-4 py-2 rounded-full whitespace-nowrap ${activeTab === 'messages' ? 'bg-brand-orange' : 'bg-white/10'}`}>
+            Messages
+            {unreadMessages > 0 && <span className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full border border-white"></span>}
+          </button>
           <button onClick={() => setActiveTab('settings')} className={`px-4 py-2 rounded-full whitespace-nowrap ${activeTab === 'settings' ? 'bg-brand-orange' : 'bg-white/10'}`}>Paramètres</button>
         </div>
 
@@ -276,6 +370,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                   <div className="flex justify-between items-start mb-4">
                     <div className="p-3 bg-blue-100 text-blue-600 rounded-lg"><ShoppingBag /></div>
+                    {pendingOrders > 0 && <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full font-bold animate-pulse">{pendingOrders}</span>}
                   </div>
                   <h3 className="text-gray-500 text-sm">Commandes Totales</h3>
                   <p className="text-2xl font-bold text-brand-brown">{orders.length}</p>
@@ -289,9 +384,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   <p className="text-xl font-bold text-brand-brown truncate">{popularDish}</p>
                 </div>
 
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 relative overflow-hidden">
                   <div className="flex justify-between items-start mb-4">
                     <div className="p-3 bg-orange-100 text-orange-600 rounded-lg"><Users /></div>
+                    {unreadMessages > 0 && <span className="text-red-500 text-xs font-bold bg-red-100 px-2 py-1 rounded-full">{unreadMessages} nouveaux</span>}
                   </div>
                   <h3 className="text-gray-500 text-sm">Messages</h3>
                   <p className="text-2xl font-bold text-brand-brown">{messages.length}</p>
@@ -342,7 +438,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   </div>
                 ) : (
                   orders.sort((a,b) => b.date.getTime() - a.date.getTime()).map((order) => (
-                    <div key={order.id} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden flex flex-col md:flex-row">
+                    <div key={order.id} className={`bg-white rounded-xl shadow-sm border overflow-hidden flex flex-col md:flex-row transition-all ${order.status === 'pending' ? 'border-red-400 shadow-md ring-2 ring-red-100' : 'border-gray-100'}`}>
                       <div className={`w-full md:w-2 bg-${order.status === 'pending' ? 'yellow' : order.status === 'delivered' ? 'green' : 'gray'}-500`}></div>
                       
                       <div className="p-6 flex-1">
@@ -354,6 +450,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                               <span className={`px-2 py-0.5 rounded text-xs font-bold ml-2 ${getStatusColor(order.status)}`}>
                                 {getStatusLabel(order.status)}
                               </span>
+                              {order.status === 'pending' && (
+                                <span className="ml-2 bg-red-500 text-white text-[10px] uppercase font-bold px-2 py-1 rounded animate-pulse">
+                                  Nouveau
+                                </span>
+                              )}
                             </div>
                             <h3 className="font-bold text-xl">{order.dishName} <span className="text-brand-orange">x{order.quantity}</span></h3>
                             <p className="text-gray-600 text-sm mt-1 flex items-center gap-1">
@@ -570,6 +671,109 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             </div>
           )}
 
+           {/* TAB: EXPERTISE (SAVOIR-FAIRE) */}
+           {activeTab === 'expertise' && (
+             <div className="animate-fade-in">
+               <h2 className="text-2xl font-bold text-brand-brown mb-6">Gestion du Savoir-Faire</h2>
+               
+               <div className="bg-white p-6 rounded-xl shadow-sm border border-brand-orange/20 mb-8">
+                 <h3 className="text-lg font-bold text-brand-orange mb-4">Ajouter une spécialité</h3>
+                 <form onSubmit={handleAddSpecialty} className="space-y-4">
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                     <div>
+                       <label className="block text-sm font-medium text-gray-700 mb-1">Nom du plat</label>
+                       <input 
+                         type="text" 
+                         required
+                         value={newSpecialty.name}
+                         onChange={(e) => setNewSpecialty({...newSpecialty, name: e.target.value})}
+                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-orange focus:outline-none"
+                         placeholder="Ex: Djenkoumé"
+                       />
+                     </div>
+                     <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Image</label>
+                        <div className="flex gap-2">
+                           <label className="cursor-pointer bg-brand-orange/10 hover:bg-brand-orange/20 text-brand-orange border border-dashed border-brand-orange rounded-lg p-2 text-center transition-colors flex items-center justify-center gap-2 flex-1">
+                              <Upload size={18} />
+                              <span className="text-xs font-medium">Uploader</span>
+                              <input 
+                                type="file" 
+                                accept="image/*"
+                                onChange={handleSpecialtyImageUpload}
+                                className="hidden"
+                              />
+                           </label>
+                           {!newSpecialty.image && (
+                              <input 
+                                type="text" 
+                                value={newSpecialty.image}
+                                onChange={(e) => setNewSpecialty({...newSpecialty, image: e.target.value})}
+                                placeholder="ou lien URL..."
+                                className="flex-[2] px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-orange text-sm"
+                              />
+                           )}
+                        </div>
+                        {newSpecialty.image && (
+                           <div className="mt-2 relative h-20 w-full rounded-md overflow-hidden border">
+                              <img src={newSpecialty.image} alt="Aperçu" className="w-full h-full object-cover" />
+                              <button 
+                                 type="button" 
+                                 onClick={() => setNewSpecialty({...newSpecialty, image: ''})}
+                                 className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1"
+                              >
+                                 <X size={12} />
+                              </button>
+                           </div>
+                        )}
+                     </div>
+                   </div>
+                   <div>
+                     <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                     <textarea 
+                       rows={3}
+                       required
+                       value={newSpecialty.description}
+                       onChange={(e) => setNewSpecialty({...newSpecialty, description: e.target.value})}
+                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-orange focus:outline-none"
+                       placeholder="Une brève description..."
+                     />
+                   </div>
+                   <div className="flex justify-end">
+                     <button 
+                       type="submit" 
+                       className="bg-brand-green text-white px-6 py-2 rounded-lg font-bold hover:bg-brand-brown transition-colors flex items-center gap-2"
+                     >
+                       <Plus size={18} /> Ajouter
+                     </button>
+                   </div>
+                 </form>
+               </div>
+
+               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                 {specialties.map((item) => (
+                   <div key={item.id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col group relative">
+                     <div className="h-40 relative">
+                       <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                       <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <button 
+                            onClick={() => handleRemoveSpecialty(item.id)}
+                            className="bg-red-500 text-white px-4 py-2 rounded-full font-bold hover:bg-red-600 flex items-center gap-2"
+                          >
+                            <Trash2 size={16} /> Supprimer
+                          </button>
+                       </div>
+                     </div>
+                     <div className="p-4 flex-1">
+                       <h3 className="font-bold text-lg text-brand-orange mb-2">{item.name}</h3>
+                       <p className="text-gray-600 text-sm leading-relaxed">{item.description}</p>
+                     </div>
+                   </div>
+                 ))}
+               </div>
+             </div>
+           )}
+
            {/* TAB: GALERIE */}
            {activeTab === 'gallery' && (
             <div className="animate-fade-in">
@@ -577,20 +781,62 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
               
               <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mb-8">
                 <h3 className="text-lg font-bold text-brand-orange mb-4">Ajouter une image</h3>
-                <form onSubmit={handleAddImage} className="flex gap-4">
-                  <input 
-                    type="text" 
-                    value={newImageUrl}
-                    onChange={(e) => setNewImageUrl(e.target.value)}
-                    placeholder="URL de l'image (https://...)"
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-orange focus:outline-none"
-                  />
-                  <button 
-                    type="submit"
-                    className="bg-brand-green text-white px-6 py-2 rounded-lg font-bold hover:bg-brand-brown transition-colors flex items-center gap-2"
-                  >
-                    <PlusCircle size={20} /> Ajouter
-                  </button>
+                <form onSubmit={handleAddImage} className="space-y-4">
+                  
+                  {/* Image Preview Area */}
+                  {newImageUrl ? (
+                    <div className="relative w-full h-64 rounded-xl overflow-hidden border-2 border-brand-orange/20 group">
+                      <img src={newImageUrl} alt="Prévisualisation" className="w-full h-full object-cover" />
+                      <button 
+                        type="button"
+                        onClick={() => setNewImageUrl('')}
+                        className="absolute top-4 right-4 bg-red-500 text-white p-2 rounded-full shadow-lg hover:bg-red-600 transition-colors"
+                      >
+                        <X size={20} />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col md:flex-row gap-4">
+                      {/* File Upload Trigger */}
+                      <label className="flex-1 h-32 cursor-pointer bg-brand-orange/5 hover:bg-brand-orange/10 border-2 border-dashed border-brand-orange/30 hover:border-brand-orange rounded-xl flex flex-col items-center justify-center gap-2 transition-all group">
+                          <div className="p-3 bg-brand-orange/10 text-brand-orange rounded-full group-hover:scale-110 transition-transform">
+                            <Upload size={24} />
+                          </div>
+                          <span className="text-sm font-bold text-brand-brown">Télécharger depuis l'appareil</span>
+                          <span className="text-xs text-gray-500">JPG, PNG</span>
+                          <input 
+                            type="file" 
+                            accept="image/*"
+                            onChange={handleGalleryFileUpload}
+                            className="hidden"
+                          />
+                      </label>
+                      
+                      {/* URL Input */}
+                      <div className="flex-1 flex flex-col justify-center gap-2">
+                        <label className="text-sm font-medium text-gray-700">Ou via lien URL</label>
+                        <div className="flex gap-2">
+                          <input 
+                            type="text" 
+                            value={newImageUrl}
+                            onChange={(e) => setNewImageUrl(e.target.value)}
+                            placeholder="https://..."
+                            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-orange focus:outline-none"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex justify-end">
+                    <button 
+                      type="submit"
+                      disabled={!newImageUrl}
+                      className="bg-brand-green text-white px-8 py-3 rounded-lg font-bold hover:bg-brand-brown transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+                    >
+                      <PlusCircle size={20} /> Ajouter à la galerie
+                    </button>
+                  </div>
                 </form>
               </div>
 
@@ -616,20 +862,48 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
           {/* TAB: MESSAGES */}
           {activeTab === 'messages' && (
             <div className="animate-fade-in">
-              <h2 className="text-2xl font-bold text-brand-brown mb-6">Messages Reçus</h2>
+              <h2 className="text-2xl font-bold text-brand-brown mb-6 flex items-center gap-3">
+                Messages Reçus
+                {unreadMessages > 0 && <span className="bg-red-500 text-white text-sm px-3 py-1 rounded-full">{unreadMessages} non lus</span>}
+              </h2>
               
               <div className="bg-white rounded-xl shadow-sm border border-gray-100 divide-y divide-gray-100">
                 {messages.length === 0 ? (
                   <div className="p-12 text-center text-gray-500">Aucun message pour le moment.</div>
                 ) : (
                   messages.map((msg) => (
-                    <div key={msg.id} className="p-6 hover:bg-gray-50 transition-colors">
+                    <div 
+                      key={msg.id} 
+                      className={`p-6 transition-colors ${!msg.read ? 'bg-orange-50 border-l-4 border-brand-orange' : 'hover:bg-gray-50 bg-white'}`}
+                    >
                       <div className="flex justify-between items-start mb-2">
-                        <h3 className="font-bold text-brand-brown">{msg.name}</h3>
-                        <span className="text-xs text-gray-400">{new Date(msg.date).toLocaleDateString()}</span>
+                        <div className="flex items-center gap-2">
+                          <h3 className={`font-bold ${!msg.read ? 'text-brand-orange' : 'text-brand-brown'}`}>
+                            {msg.name}
+                          </h3>
+                          {!msg.read && (
+                            <span className="px-2 py-0.5 bg-brand-orange text-white text-[10px] uppercase font-bold rounded">Nouveau</span>
+                          )}
+                        </div>
+                        <span className="text-xs text-gray-400">{new Date(msg.date).toLocaleDateString()} {new Date(msg.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                       </div>
-                      <p className="text-sm text-brand-orange mb-2">{msg.phone}</p>
-                      <p className="text-gray-600 bg-gray-50 p-3 rounded-lg border border-gray-100">"{msg.message}"</p>
+                      <p className="text-sm text-gray-500 font-medium mb-2">{msg.phone}</p>
+                      <p className="text-gray-600 bg-white p-3 rounded-lg border border-gray-100 shadow-sm mb-3">"{msg.message}"</p>
+                      
+                      <div className="flex justify-end">
+                        {!msg.read ? (
+                          <button 
+                            onClick={() => onMarkMessageAsRead(msg.id)}
+                            className="text-sm bg-white border border-gray-200 text-gray-600 px-3 py-1.5 rounded-lg hover:bg-brand-green hover:text-white hover:border-transparent transition-colors flex items-center gap-2"
+                          >
+                            <MailOpen size={14} /> Marquer comme lu
+                          </button>
+                        ) : (
+                          <span className="text-xs text-gray-400 flex items-center gap-1">
+                             <Check size={12} /> Lu
+                          </span>
+                        )}
+                      </div>
                     </div>
                   ))
                 )}
@@ -644,6 +918,30 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
               
               <form onSubmit={handleSaveSettings} className="bg-white p-8 rounded-xl shadow-sm border border-gray-100 space-y-6 max-w-2xl">
                 
+                {/* Section Image À Propos */}
+                <div>
+                  <h3 className="text-lg font-bold text-brand-orange mb-4 border-b pb-2">Image "Notre Histoire"</h3>
+                  <div className="space-y-4">
+                    <label className="flex flex-col items-center justify-center w-full h-48 border-2 border-brand-orange/30 border-dashed rounded-lg cursor-pointer bg-brand-orange/5 hover:bg-brand-orange/10 transition-colors">
+                      {localSettings.aboutImage ? (
+                        <div className="relative w-full h-full rounded-lg overflow-hidden group">
+                           <img src={localSettings.aboutImage} alt="À propos" className="w-full h-full object-cover" />
+                           <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                              <span className="text-white font-medium flex items-center gap-2"><Upload size={20} /> Changer l'image</span>
+                           </div>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                            <Upload className="w-10 h-10 mb-3 text-brand-orange" />
+                            <p className="mb-2 text-sm text-gray-500"><span className="font-semibold">Cliquez pour changer l'image</span></p>
+                            <p className="text-xs text-gray-500">JPG, PNG (MAX. 800x600px)</p>
+                        </div>
+                      )}
+                      <input type="file" className="hidden" accept="image/*" onChange={handleAboutImageUpload} />
+                    </label>
+                  </div>
+                </div>
+
                 <div>
                   <h3 className="text-lg font-bold text-brand-orange mb-4 border-b pb-2">Coordonnées</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
