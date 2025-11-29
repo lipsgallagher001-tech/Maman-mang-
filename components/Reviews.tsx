@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { Star, MessageCircle, User, Send } from 'lucide-react';
+import { Star, MessageCircle, User, Send, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Review } from '../types';
 
 interface ReviewsProps {
   reviews: Review[];
   onAddReview: (review: Review) => void;
 }
+
+const ITEMS_PER_PAGE = 3;
 
 const Reviews: React.FC<ReviewsProps> = ({ reviews, onAddReview }) => {
   const [formData, setFormData] = useState({
@@ -14,11 +16,28 @@ const Reviews: React.FC<ReviewsProps> = ({ reviews, onAddReview }) => {
     comment: ''
   });
   const [submitted, setSubmitted] = useState(false);
+  const [startIndex, setStartIndex] = useState(0);
 
   // Calcul de la note moyenne
   const averageRating = reviews.length > 0
     ? (reviews.reduce((acc, curr) => acc + curr.rating, 0) / reviews.length).toFixed(1)
     : '5.0';
+
+  // Tri des avis (du plus récent au plus ancien)
+  const sortedReviews = [...reviews].sort((a, b) => b.date.getTime() - a.date.getTime());
+
+  // Pagination
+  const visibleReviews = sortedReviews.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  const hasNext = startIndex + ITEMS_PER_PAGE < sortedReviews.length;
+  const hasPrev = startIndex > 0;
+
+  const handleNext = () => {
+    if (hasNext) setStartIndex(prev => prev + ITEMS_PER_PAGE);
+  };
+
+  const handlePrev = () => {
+    if (hasPrev) setStartIndex(prev => prev - ITEMS_PER_PAGE);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,6 +51,8 @@ const Reviews: React.FC<ReviewsProps> = ({ reviews, onAddReview }) => {
     onAddReview(newReview);
     setSubmitted(true);
     setFormData({ name: '', rating: 5, comment: '' });
+    // Revenir à la première page pour voir son avis
+    setStartIndex(0);
     
     setTimeout(() => setSubmitted(false), 5000);
   };
@@ -83,24 +104,63 @@ const Reviews: React.FC<ReviewsProps> = ({ reviews, onAddReview }) => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
           
           {/* Reviews List */}
-          <div className="lg:col-span-2 space-y-6">
-            {reviews.sort((a, b) => b.date.getTime() - a.date.getTime()).map((review) => (
-              <div key={review.id} className="bg-gray-50 p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-                <div className="flex justify-between items-start mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-brand-brown/10 rounded-full flex items-center justify-center text-brand-brown font-bold">
-                      {review.author.charAt(0)}
+          <div className="lg:col-span-2 flex flex-col justify-between">
+            <div className="space-y-6">
+              {visibleReviews.length === 0 ? (
+                 <div className="p-8 text-center text-gray-500 border border-dashed rounded-xl">
+                   Soyez le premier à laisser un avis !
+                 </div>
+              ) : (
+                visibleReviews.map((review) => (
+                  <div key={review.id} className="bg-gray-50 p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow animate-fade-in">
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-brand-brown/10 rounded-full flex items-center justify-center text-brand-brown font-bold">
+                          {review.author.charAt(0)}
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-brand-brown">{review.author}</h4>
+                          <p className="text-xs text-gray-500">{new Date(review.date).toLocaleDateString()}</p>
+                        </div>
+                      </div>
+                      {renderStars(review.rating)}
                     </div>
-                    <div>
-                      <h4 className="font-bold text-brand-brown">{review.author}</h4>
-                      <p className="text-xs text-gray-500">{new Date(review.date).toLocaleDateString()}</p>
-                    </div>
+                    <p className="text-gray-700 leading-relaxed italic">"{review.comment}"</p>
                   </div>
-                  {renderStars(review.rating)}
-                </div>
-                <p className="text-gray-700 leading-relaxed italic">"{review.comment}"</p>
+                ))
+              )}
+            </div>
+
+            {/* Pagination Controls */}
+            {reviews.length > ITEMS_PER_PAGE && (
+              <div className="flex items-center justify-center gap-4 mt-8 pt-4 border-t border-gray-100">
+                <button 
+                  onClick={handlePrev}
+                  disabled={!hasPrev}
+                  className={`p-2 rounded-full border transition-all ${
+                    hasPrev 
+                      ? 'bg-white border-brand-orange text-brand-orange hover:bg-brand-orange hover:text-white shadow-sm' 
+                      : 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed'
+                  }`}
+                >
+                  <ChevronLeft size={24} />
+                </button>
+                <span className="text-sm text-gray-500 font-medium">
+                  {startIndex + 1} - {Math.min(startIndex + ITEMS_PER_PAGE, reviews.length)} sur {reviews.length}
+                </span>
+                <button 
+                  onClick={handleNext}
+                  disabled={!hasNext}
+                  className={`p-2 rounded-full border transition-all ${
+                    hasNext 
+                      ? 'bg-white border-brand-orange text-brand-orange hover:bg-brand-orange hover:text-white shadow-sm' 
+                      : 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed'
+                  }`}
+                >
+                  <ChevronRight size={24} />
+                </button>
               </div>
-            ))}
+            )}
           </div>
 
           {/* Form Section */}
