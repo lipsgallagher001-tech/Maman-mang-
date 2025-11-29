@@ -22,14 +22,16 @@ import {
   Mail,
   MailOpen,
   ChefHat,
-  Info
+  Info,
+  Star
 } from 'lucide-react';
-import { Dish, Order, ContactMessage, PageView, OrderStatus, SiteSettings, SpecialtyItem } from '../types';
+import { Dish, Order, ContactMessage, PageView, OrderStatus, SiteSettings, SpecialtyItem, Review } from '../types';
 
 interface AdminDashboardProps {
   orders: Order[];
   menuItems: Dish[];
   messages: ContactMessage[];
+  reviews: Review[];
   settings: SiteSettings;
   galleryImages: string[];
   specialties: SpecialtyItem[];
@@ -40,6 +42,7 @@ interface AdminDashboardProps {
   onUpdateSpecialties: (specialties: SpecialtyItem[]) => void;
   onAddDish: (dish: Dish) => void;
   onMarkMessageAsRead: (id: string) => void;
+  onDeleteReview: (id: string) => void;
   onNavigate: (page: PageView) => void;
 }
 
@@ -47,6 +50,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   orders, 
   menuItems, 
   messages, 
+  reviews,
   settings,
   galleryImages,
   specialties,
@@ -57,9 +61,10 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onUpdateSpecialties,
   onAddDish,
   onMarkMessageAsRead,
+  onDeleteReview,
   onNavigate 
 }) => {
-  const [activeTab, setActiveTab] = useState<'overview' | 'orders' | 'menu' | 'expertise' | 'gallery' | 'messages' | 'settings'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'orders' | 'menu' | 'expertise' | 'gallery' | 'messages' | 'reviews' | 'settings'>('overview');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [localSettings, setLocalSettings] = useState<SiteSettings>(settings);
   const [newImageUrl, setNewImageUrl] = useState('');
@@ -244,6 +249,11 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const pendingOrders = orders.filter(o => o.status === 'pending').length;
   const unreadMessages = messages.filter(m => !m.read).length;
   
+  // Stats Avis
+  const averageRating = reviews.length > 0 
+    ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1) 
+    : 'N/A';
+  
   // Plat populaire
   const dishCounts: Record<string, number> = {};
   orders.forEach(order => {
@@ -423,6 +433,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             {unreadMessages > 0 && <span className="ml-auto bg-red-500 text-white text-xs px-2 py-1 rounded-full font-bold">{unreadMessages}</span>}
           </button>
           <button 
+            onClick={() => setActiveTab('reviews')}
+            className={`flex items-center gap-3 w-full px-4 py-3 rounded-lg transition-colors ${activeTab === 'reviews' ? 'bg-brand-orange text-white' : 'hover:bg-white/10 text-gray-300'}`}
+          >
+            <Star size={20} /> Avis Clients
+          </button>
+          <button 
             onClick={() => setActiveTab('settings')}
             className={`flex items-center gap-3 w-full px-4 py-3 rounded-lg transition-colors ${activeTab === 'settings' ? 'bg-brand-orange text-white' : 'hover:bg-white/10 text-gray-300'}`}
           >
@@ -461,6 +477,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             Messages
             {unreadMessages > 0 && <span className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full border border-white"></span>}
           </button>
+          <button onClick={() => setActiveTab('reviews')} className={`px-4 py-2 rounded-full whitespace-nowrap ${activeTab === 'reviews' ? 'bg-brand-orange' : 'bg-white/10'}`}>Avis</button>
           <button onClick={() => setActiveTab('settings')} className={`px-4 py-2 rounded-full whitespace-nowrap ${activeTab === 'settings' ? 'bg-brand-orange' : 'bg-white/10'}`}>Paramètres</button>
         </div>
 
@@ -1041,14 +1058,76 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             </div>
           )}
 
+          {/* TAB: REVIEWS (AVIS) */}
+          {activeTab === 'reviews' && (
+            <div className="animate-fade-in">
+              <h2 className="text-2xl font-bold text-brand-brown mb-6 flex items-center gap-3">
+                Avis Clients
+              </h2>
+
+              {/* Stats Card */}
+              <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mb-8 flex flex-col md:flex-row items-center justify-between gap-6">
+                 <div className="flex items-center gap-6">
+                    <div className="text-center p-4 bg-brand-orange/10 rounded-xl">
+                       <span className="block text-4xl font-bold text-brand-orange">{averageRating}</span>
+                       <span className="text-xs text-gray-500 uppercase font-bold">Note Moyenne</span>
+                    </div>
+                    <div>
+                       <div className="flex gap-1 mb-2">
+                          {[1, 2, 3, 4, 5].map(i => (
+                             <Star key={i} size={24} className={`${i <= Math.round(Number(averageRating)) ? 'fill-brand-orange text-brand-orange' : 'text-gray-300'}`} />
+                          ))}
+                       </div>
+                       <p className="text-gray-600">Basé sur <strong>{reviews.length}</strong> avis vérifiés.</p>
+                    </div>
+                 </div>
+              </div>
+              
+              <div className="grid grid-cols-1 gap-4">
+                {reviews.length === 0 ? (
+                  <div className="p-12 text-center text-gray-500 bg-white rounded-xl border border-gray-100">Aucun avis pour le moment.</div>
+                ) : (
+                  reviews.sort((a,b) => b.date.getTime() - a.date.getTime()).map((review) => (
+                    <div key={review.id} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between gap-4">
+                      <div>
+                        <div className="flex items-center gap-3 mb-2">
+                           <div className="flex gap-0.5">
+                              {[1, 2, 3, 4, 5].map(i => (
+                                 <Star key={i} size={14} className={`${i <= review.rating ? 'fill-brand-orange text-brand-orange' : 'text-gray-300'}`} />
+                              ))}
+                           </div>
+                           <span className="font-bold text-brand-brown">{review.author}</span>
+                           <span className="text-gray-400 text-xs">• {new Date(review.date).toLocaleDateString()}</span>
+                        </div>
+                        <p className="text-gray-600 italic">"{review.comment}"</p>
+                      </div>
+                      <div>
+                         <button 
+                           onClick={() => {
+                              if(confirm('Êtes-vous sûr de vouloir supprimer cet avis ?')) {
+                                 onDeleteReview(review.id);
+                              }
+                           }}
+                           className="text-red-400 hover:text-red-600 p-2 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-2 text-sm"
+                         >
+                            <Trash2 size={16} /> Supprimer
+                         </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+
           {/* TAB: SETTINGS */}
           {activeTab === 'settings' && (
             <div className="animate-fade-in">
               <h2 className="text-2xl font-bold text-brand-brown mb-6">Informations du Restaurant</h2>
               
-              <form onSubmit={handleSaveSettings} className="bg-white p-8 rounded-xl shadow-sm border border-gray-100">
+              <form onSubmit={handleSaveSettings} className="bg-white p-8 rounded-xl shadow-sm border border-gray-100 w-full">
                 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 w-full">
                   
                   {/* LEFT COLUMN: Main Info */}
                   <div className="space-y-6">

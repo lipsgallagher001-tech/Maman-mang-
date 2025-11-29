@@ -58,7 +58,7 @@ const Reviews: React.FC<ReviewsProps> = ({ reviews, onAddReview }) => {
   };
 
   return (
-    <div className="py-16 bg-white min-h-screen">
+    <div className="py-16 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Header Section */}

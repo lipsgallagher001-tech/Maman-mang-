@@ -200,6 +200,10 @@ const App: React.FC = () => {
       msg.id === id ? { ...msg, read: true } : msg
     ));
   };
+  
+  const handleDeleteReview = (id: string) => {
+    setReviews(prev => prev.filter(review => review.id !== id));
+  };
 
   // Actions pour le Site Public
   const handleAddOrder = (newOrder: Order) => {
@@ -224,6 +228,7 @@ const App: React.FC = () => {
             <Services specialties={specialties} />
             <About image={siteSettings.aboutImage} />
             <Gallery images={galleryImages} />
+            <Reviews reviews={reviews} onAddReview={handleAddReview} />
             <Contact onSendMessage={handleAddMessage} settings={siteSettings} />
           </>
         );
@@ -245,6 +250,7 @@ const App: React.FC = () => {
             orders={orders} 
             menuItems={menuItems}
             messages={messages}
+            reviews={reviews}
             settings={siteSettings}
             galleryImages={galleryImages}
             specialties={specialties}
@@ -255,6 +261,7 @@ const App: React.FC = () => {
             onUpdateSpecialties={updateSpecialties}
             onAddDish={handleAddDish}
             onMarkMessageAsRead={handleMarkMessageAsRead}
+            onDeleteReview={handleDeleteReview}
             onNavigate={setCurrentPage}
           />
         );
