@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Menu, X, Phone, Lock } from 'lucide-react';
+import { Menu, X, Phone } from 'lucide-react';
 import { PageView } from '../types';
 
 interface NavbarProps {
@@ -57,16 +57,6 @@ const Navbar: React.FC<NavbarProps> = ({ currentPage, onNavigate, phoneNumber = 
                   {item.label}
                 </button>
               ))}
-              <button
-                onClick={() => handleNav('admin')}
-                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 flex items-center gap-1 ${
-                    currentPage === 'admin'
-                      ? 'bg-brand-orange text-white'
-                      : 'bg-white/10 hover:bg-brand-green hover:text-white'
-                  }`}
-              >
-                <Lock size={14} /> Admin
-              </button>
             </div>
           </div>
 
@@ -99,16 +89,6 @@ const Navbar: React.FC<NavbarProps> = ({ currentPage, onNavigate, phoneNumber = 
                 {item.label}
               </button>
             ))}
-            <button
-                onClick={() => handleNav('admin')}
-                className={`flex items-center gap-2 w-full text-left px-3 py-2 rounded-md text-base font-medium ${
-                  currentPage === 'admin'
-                    ? 'bg-brand-orange text-white'
-                    : 'text-brand-cream hover:bg-brand-green'
-                }`}
-              >
-                <Lock size={16} /> Admin
-              </button>
             <a 
               href={`tel:${phoneNumber.replace(/\s/g, '')}`}
               className="flex items-center gap-2 w-full px-3 py-2 mt-4 text-base font-medium text-brand-brown bg-brand-yellow rounded-md"
