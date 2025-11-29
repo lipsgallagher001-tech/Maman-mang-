@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Menu, X, Phone } from 'lucide-react';
+import { Menu, X, Phone, Lock } from 'lucide-react';
 import { PageView } from '../types';
 
 interface NavbarProps {
@@ -42,7 +42,7 @@ const Navbar: React.FC<NavbarProps> = ({ currentPage, onNavigate, phoneNumber = 
           </div>
 
           {/* Desktop Menu */}
-          <div className="hidden md:block">
+          <div className="hidden lg:block">
             <div className="ml-10 flex items-baseline space-x-4">
               {navItems.map((item) => (
                 <button
@@ -57,11 +57,21 @@ const Navbar: React.FC<NavbarProps> = ({ currentPage, onNavigate, phoneNumber = 
                   {item.label}
                 </button>
               ))}
+              <button
+                onClick={() => handleNav('admin')}
+                className={`px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 flex items-center gap-1 ${
+                    currentPage === 'admin'
+                      ? 'bg-brand-orange text-white'
+                      : 'bg-white/10 hover:bg-brand-green hover:text-white'
+                  }`}
+              >
+                <Lock size={14} /> Admin
+              </button>
             </div>
           </div>
 
           {/* Mobile Menu Button */}
-          <div className="-mr-2 flex md:hidden">
+          <div className="-mr-2 flex lg:hidden">
             <button
               onClick={() => setIsOpen(!isOpen)}
               className="inline-flex items-center justify-center p-2 rounded-md text-brand-cream hover:bg-brand-orange focus:outline-none"
@@ -74,7 +84,7 @@ const Navbar: React.FC<NavbarProps> = ({ currentPage, onNavigate, phoneNumber = 
 
       {/* Mobile Menu */}
       {isOpen && (
-        <div className="md:hidden bg-brand-brown pb-4 px-2 pt-2 shadow-xl">
+        <div className="lg:hidden bg-brand-brown pb-4 px-2 pt-2 shadow-xl">
           <div className="space-y-1 sm:px-3">
             {navItems.map((item) => (
               <button
@@ -89,6 +99,16 @@ const Navbar: React.FC<NavbarProps> = ({ currentPage, onNavigate, phoneNumber = 
                 {item.label}
               </button>
             ))}
+            <button
+                onClick={() => handleNav('admin')}
+                className={`flex items-center gap-2 w-full text-left px-3 py-2 rounded-md text-base font-medium ${
+                  currentPage === 'admin'
+                    ? 'bg-brand-orange text-white'
+                    : 'text-brand-cream hover:bg-brand-green'
+                }`}
+              >
+                <Lock size={16} /> Admin
+              </button>
             <a 
               href={`tel:${phoneNumber.replace(/\s/g, '')}`}
               className="flex items-center gap-2 w-full px-3 py-2 mt-4 text-base font-medium text-brand-brown bg-brand-yellow rounded-md"

@@ -16,7 +16,9 @@ import {
   Save,
   Image as ImageIcon,
   Trash2,
-  PlusCircle
+  PlusCircle,
+  Plus,
+  Upload
 } from 'lucide-react';
 import { Dish, Order, ContactMessage, PageView, OrderStatus, SiteSettings } from '../types';
 
@@ -30,6 +32,7 @@ interface AdminDashboardProps {
   onToggleAvailability: (id: string) => void;
   onUpdateSettings: (settings: SiteSettings) => void;
   onUpdateGallery: (images: string[]) => void;
+  onAddDish: (dish: Dish) => void;
   onNavigate: (page: PageView) => void;
 }
 
@@ -43,12 +46,22 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onToggleAvailability,
   onUpdateSettings,
   onUpdateGallery,
+  onAddDish,
   onNavigate 
 }) => {
   const [activeTab, setActiveTab] = useState<'overview' | 'orders' | 'menu' | 'messages' | 'settings' | 'gallery'>('overview');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [localSettings, setLocalSettings] = useState<SiteSettings>(settings);
   const [newImageUrl, setNewImageUrl] = useState('');
+  
+  // State pour le nouveau plat
+  const [showAddDishForm, setShowAddDishForm] = useState(false);
+  const [newDish, setNewDish] = useState({
+    name: '',
+    description: '',
+    image: '',
+    category: 'plat' as const
+  });
 
   // Mettre à jour les paramètres locaux si les props changent
   React.useEffect(() => {
@@ -72,6 +85,36 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const handleRemoveImage = (indexToRemove: number) => {
     const newImages = galleryImages.filter((_, index) => index !== indexToRemove);
     onUpdateGallery(newImages);
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setNewDish(prev => ({ ...prev, image: reader.result as string }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSubmitDish = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newDish.name) return;
+
+    const dish: Dish = {
+      id: Date.now().toString(),
+      name: newDish.name,
+      description: newDish.description,
+      price: 0, // Prix par défaut à 0 car défini par le client
+      image: newDish.image || 'https://picsum.photos/seed/new/400/300', // Image par défaut si vide
+      category: newDish.category,
+      available: true
+    };
+
+    onAddDish(dish);
+    setNewDish({ name: '', description: '', image: '', category: 'plat' });
+    setShowAddDishForm(false);
   };
 
   // Simuler un login très simple
@@ -140,7 +183,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     <div className="flex h-screen bg-gray-100 overflow-hidden font-sans">
       
       {/* Sidebar */}
-      <aside className="w-64 bg-brand-brown text-white hidden md:flex flex-col">
+      <aside className="w-64 bg-brand-brown text-white hidden lg:flex flex-col">
         <div className="p-6 flex items-center gap-3 border-b border-white/10">
           <div className="w-10 h-10 bg-brand-orange rounded-full flex items-center justify-center font-bold text-white">M</div>
           <span className="font-bold text-xl">Admin Panel</span>
@@ -199,15 +242,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto">
-        <header className="bg-white shadow-sm p-6 flex justify-between items-center md:hidden">
+        <header className="bg-white shadow-sm p-6 flex justify-between items-center lg:hidden">
           <h1 className="text-xl font-bold text-brand-brown">Maman Mangé Admin</h1>
           <button onClick={() => onNavigate('home')} className="p-2 text-gray-500"><LogOut size={20} /></button>
         </header>
 
         {/* Mobile Nav Tabs */}
-        <div className="md:hidden flex overflow-x-auto bg-brand-brown text-white p-2 gap-2 sticky top-0 z-20">
+        <div className="lg:hidden flex overflow-x-auto bg-brand-brown text-white p-2 gap-2 sticky top-0 z-20">
           <button onClick={() => setActiveTab('overview')} className={`px-4 py-2 rounded-full whitespace-nowrap ${activeTab === 'overview' ? 'bg-brand-orange' : 'bg-white/10'}`}>Tableau</button>
           <button onClick={() => setActiveTab('orders')} className={`px-4 py-2 rounded-full whitespace-nowrap ${activeTab === 'orders' ? 'bg-brand-orange' : 'bg-white/10'}`}>Commandes</button>
+          <button onClick={() => setActiveTab('menu')} className={`px-4 py-2 rounded-full whitespace-nowrap ${activeTab === 'menu' ? 'bg-brand-orange' : 'bg-white/10'}`}>Menu</button>
           <button onClick={() => setActiveTab('gallery')} className={`px-4 py-2 rounded-full whitespace-nowrap ${activeTab === 'gallery' ? 'bg-brand-orange' : 'bg-white/10'}`}>Galerie</button>
           <button onClick={() => setActiveTab('settings')} className={`px-4 py-2 rounded-full whitespace-nowrap ${activeTab === 'settings' ? 'bg-brand-orange' : 'bg-white/10'}`}>Paramètres</button>
         </div>
@@ -390,7 +434,116 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
           {/* TAB: MENU */}
           {activeTab === 'menu' && (
             <div className="animate-fade-in">
-              <h2 className="text-2xl font-bold text-brand-brown mb-6">Disponibilité du Menu</h2>
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-2xl font-bold text-brand-brown">Gestion du Menu</h2>
+                <button 
+                  onClick={() => setShowAddDishForm(!showAddDishForm)}
+                  className="bg-brand-orange text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 hover:bg-brand-brown transition-colors"
+                >
+                  {showAddDishForm ? <X size={20} /> : <Plus size={20} />}
+                  {showAddDishForm ? 'Annuler' : 'Ajouter un plat'}
+                </button>
+              </div>
+
+              {/* Formulaire d'ajout */}
+              {showAddDishForm && (
+                <div className="bg-white p-6 rounded-xl shadow-md mb-8 border border-brand-orange/20 animate-fade-in">
+                  <h3 className="font-bold text-lg mb-4 text-brand-brown">Nouveau Plat</h3>
+                  <form onSubmit={handleSubmitDish} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Nom du plat</label>
+                      <input 
+                        type="text" 
+                        required
+                        value={newDish.name}
+                        onChange={(e) => setNewDish({...newDish, name: e.target.value})}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-orange focus:outline-none"
+                        placeholder="Ex: Riz Jollof"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Catégorie</label>
+                      <select 
+                        value={newDish.category}
+                        onChange={(e) => setNewDish({...newDish, category: e.target.value as any})}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-orange focus:outline-none"
+                      >
+                        <option value="plat">Plat Principal</option>
+                        <option value="dessert">Dessert</option>
+                        <option value="boisson">Boisson</option>
+                      </select>
+                    </div>
+                    
+                    {/* Image Upload Section */}
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Image du plat</label>
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                           <label className="flex-1 cursor-pointer bg-brand-orange/10 hover:bg-brand-orange/20 text-brand-orange border border-dashed border-brand-orange rounded-lg p-3 text-center transition-colors flex items-center justify-center gap-2">
+                              <Upload size={18} />
+                              <span className="text-sm font-medium">Choisir une image</span>
+                              <input 
+                                type="file" 
+                                accept="image/*"
+                                onChange={handleImageUpload}
+                                className="hidden"
+                              />
+                           </label>
+                        </div>
+                        
+                        {newDish.image && (
+                          <div className="relative w-full h-40 rounded-lg overflow-hidden border border-gray-200 group mt-2">
+                            <img src={newDish.image} alt="Prévisualisation" className="w-full h-full object-cover" />
+                            <button 
+                              type="button"
+                              onClick={() => setNewDish(prev => ({...prev, image: ''}))}
+                              className="absolute top-2 right-2 bg-red-500 text-white p-1.5 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
+                              title="Supprimer l'image"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                            <div className="absolute bottom-0 inset-x-0 bg-black/50 text-white text-xs p-1 text-center truncate">
+                              Aperçu
+                            </div>
+                          </div>
+                        )}
+                        {!newDish.image && (
+                          <div className="relative">
+                            <span className="text-xs text-gray-400 absolute right-3 top-2.5">ou URL</span>
+                            <input 
+                              type="text" 
+                              value={newDish.image}
+                              onChange={(e) => setNewDish({...newDish, image: e.target.value})}
+                              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-orange focus:outline-none text-sm pr-16"
+                              placeholder="https://..."
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                      <textarea 
+                        rows={5}
+                        value={newDish.description}
+                        onChange={(e) => setNewDish({...newDish, description: e.target.value})}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-orange focus:outline-none"
+                        placeholder="Description appétissante du plat..."
+                      />
+                    </div>
+                    <div className="md:col-span-2 mt-2">
+                      <button 
+                        type="submit" 
+                        className="w-full bg-brand-green text-white py-3 rounded-lg font-bold hover:bg-brand-brown transition-colors shadow-lg"
+                      >
+                        Ajouter au Menu
+                      </button>
+                    </div>
+                  </form>
+                </div>
+              )}
+
               <p className="text-gray-500 mb-8">Activez ou désactivez les plats selon ce qui reste en cuisine.</p>
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -409,7 +562,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     </div>
                     <div className="p-4">
                       <h3 className="font-bold text-lg text-brand-brown">{item.name}</h3>
-                      <p className="text-brand-orange font-bold">{item.price} FCFA</p>
+                      <p className="text-gray-500 text-sm mt-2 line-clamp-2">{item.description}</p>
                     </div>
                   </div>
                 ))}

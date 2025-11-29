@@ -146,6 +146,10 @@ const App: React.FC = () => {
     setGalleryImages(newImages);
   };
 
+  const handleAddDish = (newDish: Dish) => {
+    setMenuItems(prev => [newDish, ...prev]);
+  };
+
   // Actions pour le Site Public
   const handleAddOrder = (newOrder: Order) => {
     setOrders(prev => [newOrder, ...prev]);
@@ -196,6 +200,7 @@ const App: React.FC = () => {
             onToggleAvailability={toggleDishAvailability}
             onUpdateSettings={updateSiteSettings}
             onUpdateGallery={updateGalleryImages}
+            onAddDish={handleAddDish}
             onNavigate={setCurrentPage}
           />
         );
