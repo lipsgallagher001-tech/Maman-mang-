@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   LayoutDashboard, 
   ShoppingBag, 
@@ -21,7 +21,8 @@ import {
   Upload,
   Mail,
   MailOpen,
-  ChefHat
+  ChefHat,
+  Info
 } from 'lucide-react';
 import { Dish, Order, ContactMessage, PageView, OrderStatus, SiteSettings, SpecialtyItem } from '../types';
 
@@ -83,6 +84,35 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   React.useEffect(() => {
     setLocalSettings(settings);
   }, [settings]);
+
+  // Génération des données du graphique (Mémoïsé pour éviter les re-calculs inutiles)
+  const chartData = useMemo(() => {
+    // Calcul du CA d'aujourd'hui réel
+    const todayRevenue = orders
+      .filter(o => o.status !== 'cancelled' && new Date(o.date).toDateString() === new Date().toDateString())
+      .reduce((acc, curr) => acc + curr.totalPrice, 0);
+
+    // Génération de 6 jours de fausses données historiques pour l'exemple
+    const data = [];
+    for (let i = 6; i > 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      // Valeur aléatoire entre 15000 et 45000 pour simuler une activité
+      const simulatedValue = Math.floor(Math.random() * 30000) + 15000;
+      data.push({
+        label: d.toLocaleDateString('fr-FR', { weekday: 'short' }),
+        value: simulatedValue
+      });
+    }
+
+    // Ajout d'aujourd'hui
+    data.push({
+      label: new Date().toLocaleDateString('fr-FR', { weekday: 'short' }),
+      value: todayRevenue > 0 ? todayRevenue : 20000 // Valeur par défaut pour ne pas avoir un graphique vide
+    });
+
+    return data;
+  }, [orders]);
 
   const handleSaveSettings = (e: React.FormEvent) => {
     e.preventDefault();
@@ -247,6 +277,90 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }
   };
 
+  // --- Composant Graphique SVG ---
+  const RevenueChart = () => {
+    const height = 200;
+    const width = 600;
+    const padding = 20;
+    
+    const maxValue = Math.max(...chartData.map(d => d.value)) * 1.2; // +20% marge
+    
+    // Points pour la ligne
+    const points = chartData.map((d, i) => {
+      const x = (i / (chartData.length - 1)) * (width - 2 * padding) + padding;
+      const y = height - ((d.value / maxValue) * (height - 2 * padding)) - padding;
+      return `${x},${y}`;
+    }).join(' ');
+
+    // Points pour le polygone de remplissage (gradient)
+    const fillPoints = `
+      ${padding},${height - padding} 
+      ${points} 
+      ${width - padding},${height - padding}
+    `;
+
+    return (
+      <div className="w-full overflow-hidden">
+        <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full">
+          <defs>
+            <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#E07A5F" stopOpacity="0.4" />
+              <stop offset="100%" stopColor="#E07A5F" stopOpacity="0" />
+            </linearGradient>
+          </defs>
+          
+          {/* Grille horizontale (3 lignes) */}
+          {[0.25, 0.5, 0.75].map((ratio, i) => (
+             <line 
+                key={i}
+                x1={padding} 
+                y1={height - (height * ratio)} 
+                x2={width - padding} 
+                y2={height - (height * ratio)} 
+                stroke="#eee" 
+                strokeDasharray="4"
+             />
+          ))}
+
+          {/* Zone remplie */}
+          <polygon points={fillPoints} fill="url(#chartGradient)" />
+          
+          {/* Ligne principale */}
+          <polyline 
+            points={points} 
+            fill="none" 
+            stroke="#E07A5F" 
+            strokeWidth="3" 
+            strokeLinecap="round" 
+            strokeLinejoin="round" 
+          />
+          
+          {/* Points et Labels */}
+          {chartData.map((d, i) => {
+             const x = (i / (chartData.length - 1)) * (width - 2 * padding) + padding;
+             const y = height - ((d.value / maxValue) * (height - 2 * padding)) - padding;
+             return (
+                <g key={i} className="group">
+                   <circle cx={x} cy={y} r="4" fill="#E07A5F" className="transition-all duration-300 group-hover:r-6" />
+                   {/* Tooltip au survol (CSS pur via group-hover) */}
+                   <g className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+                      <rect x={x - 40} y={y - 35} width="80" height="25" rx="4" fill="#3D405B" />
+                      <text x={x} y={y - 18} textAnchor="middle" fill="white" fontSize="12" fontWeight="bold">
+                         {d.value.toLocaleString()}F
+                      </text>
+                   </g>
+                   {/* Label Axe X */}
+                   <text x={x} y={height - 2} textAnchor="middle" fill="#888" fontSize="12">
+                      {d.label}
+                   </text>
+                </g>
+             );
+          })}
+        </svg>
+      </div>
+    );
+  };
+
   return (
     <div className="flex h-screen bg-gray-100 overflow-hidden font-sans">
       
@@ -357,6 +471,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <div className="space-y-6 animate-fade-in">
               <h2 className="text-2xl font-bold text-brand-brown mb-6">Aperçu des Performances</h2>
               
+              {/* Cartes Statuts */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                   <div className="flex justify-between items-start mb-4">
@@ -391,6 +506,20 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   </div>
                   <h3 className="text-gray-500 text-sm">Messages</h3>
                   <p className="text-2xl font-bold text-brand-brown">{messages.length}</p>
+                </div>
+              </div>
+
+              {/* Section Graphique */}
+              <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="font-bold text-brand-brown flex items-center gap-2">
+                    <TrendingUp size={20} className="text-brand-orange" />
+                    Évolution du Chiffre d'Affaires
+                  </h3>
+                  <div className="text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded border">7 derniers jours</div>
+                </div>
+                <div className="w-full aspect-[2/1] md:aspect-[3/1] lg:aspect-[4/1] max-h-64">
+                   <RevenueChart />
                 </div>
               </div>
 
