@@ -261,8 +261,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   });
   const popularDish = Object.entries(dishCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || 'Aucun';
 
-  // Formatage date
-  const formatDate = (date: Date) => {
+  // Formatage date sécurisé
+  const formatDate = (date: Date | string) => {
     return new Date(date).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
   };
 
@@ -584,7 +584,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                     <p className="text-gray-500">En attente de la première commande...</p>
                   </div>
                 ) : (
-                  orders.sort((a,b) => b.date.getTime() - a.date.getTime()).map((order) => (
+                  [...orders].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((order) => (
                     <div key={order.id} className={`bg-white rounded-xl shadow-sm border overflow-hidden flex flex-col md:flex-row transition-all ${order.status === 'pending' ? 'border-red-400 shadow-md ring-2 ring-red-100' : 'border-gray-100'}`}>
                       <div className={`w-full md:w-2 bg-${order.status === 'pending' ? 'yellow' : order.status === 'delivered' ? 'green' : 'gray'}-500`}></div>
                       
@@ -1087,7 +1087,8 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 {reviews.length === 0 ? (
                   <div className="p-12 text-center text-gray-500 bg-white rounded-xl border border-gray-100">Aucun avis pour le moment.</div>
                 ) : (
-                  reviews.sort((a,b) => b.date.getTime() - a.date.getTime()).map((review) => (
+                  // Sécurisation du tri par date et copie du tableau
+                  [...reviews].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((review) => (
                     <div key={review.id} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between gap-4">
                       <div>
                         <div className="flex items-center gap-3 mb-2">
@@ -1103,8 +1104,9 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       </div>
                       <div>
                          <button 
+                           type="button"
                            onClick={() => {
-                              if(confirm('Êtes-vous sûr de vouloir supprimer cet avis ?')) {
+                              if(window.confirm('Êtes-vous sûr de vouloir supprimer cet avis ?')) {
                                  onDeleteReview(review.id);
                               }
                            }}
