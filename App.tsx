@@ -179,6 +179,10 @@ const App: React.FC = () => {
     ));
   };
 
+  const handleDeleteOrder = (id: string) => {
+    setOrders(prev => prev.filter(order => order.id !== id));
+  };
+
   const updateSiteSettings = (newSettings: SiteSettings) => {
     setSiteSettings(newSettings);
   };
@@ -203,6 +207,10 @@ const App: React.FC = () => {
     setMessages(prev => prev.map(msg => 
       msg.id === id ? { ...msg, read: true } : msg
     ));
+  };
+
+  const handleDeleteMessage = (id: string) => {
+    setMessages(prev => prev.filter(msg => msg.id !== id));
   };
   
   const handleDeleteReview = (id: string) => {
@@ -259,6 +267,7 @@ const App: React.FC = () => {
             galleryImages={galleryImages}
             specialties={specialties}
             onUpdateOrderStatus={updateOrderStatus}
+            onDeleteOrder={handleDeleteOrder}
             onToggleAvailability={toggleDishAvailability}
             onUpdateSettings={updateSiteSettings}
             onUpdateGallery={updateGalleryImages}
@@ -266,6 +275,7 @@ const App: React.FC = () => {
             onAddDish={handleAddDish}
             onDeleteDish={handleDeleteDish}
             onMarkMessageAsRead={handleMarkMessageAsRead}
+            onDeleteMessage={handleDeleteMessage}
             onDeleteReview={handleDeleteReview}
             onNavigate={setCurrentPage}
           />
