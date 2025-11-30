@@ -195,6 +195,10 @@ const App: React.FC = () => {
     setMenuItems(prev => [newDish, ...prev]);
   };
 
+  const handleDeleteDish = (id: string) => {
+    setMenuItems(prev => prev.filter(item => item.id !== id));
+  };
+
   const handleMarkMessageAsRead = (id: string) => {
     setMessages(prev => prev.map(msg => 
       msg.id === id ? { ...msg, read: true } : msg
@@ -260,18 +264,19 @@ const App: React.FC = () => {
             onUpdateGallery={updateGalleryImages}
             onUpdateSpecialties={updateSpecialties}
             onAddDish={handleAddDish}
+            onDeleteDish={handleDeleteDish}
             onMarkMessageAsRead={handleMarkMessageAsRead}
             onDeleteReview={handleDeleteReview}
             onNavigate={setCurrentPage}
           />
         );
       default:
-        return <Hero onNavigate={setCurrentPage} />;
+        return null;
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col font-sans">
+    <div className="min-h-screen bg-brand-cream font-sans text-brand-brown selection:bg-brand-orange selection:text-white">
       {currentPage !== 'admin' && (
         <Navbar 
           currentPage={currentPage} 
@@ -279,9 +284,11 @@ const App: React.FC = () => {
           phoneNumber={siteSettings.phoneNumber}
         />
       )}
-      <main className="flex-grow bg-brand-cream/20">
+      
+      <main className="animate-fade-in">
         {renderPage()}
       </main>
+
       {currentPage !== 'admin' && (
         <Footer 
           onNavigate={setCurrentPage} 

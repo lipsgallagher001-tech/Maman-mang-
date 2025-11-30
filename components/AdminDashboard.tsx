@@ -7,8 +7,6 @@ import {
   LogOut, 
   Check, 
   X, 
-  Clock, 
-  Truck,
   TrendingUp,
   DollarSign,
   Users,
@@ -17,13 +15,12 @@ import {
   Image as ImageIcon,
   Trash2,
   PlusCircle,
-  Plus,
   Upload,
-  Mail,
   MailOpen,
   ChefHat,
   Info,
-  Star
+  Star,
+  Truck
 } from 'lucide-react';
 import { Dish, Order, ContactMessage, PageView, OrderStatus, SiteSettings, SpecialtyItem, Review } from '../types';
 
@@ -41,6 +38,7 @@ interface AdminDashboardProps {
   onUpdateGallery: (images: string[]) => void;
   onUpdateSpecialties: (specialties: SpecialtyItem[]) => void;
   onAddDish: (dish: Dish) => void;
+  onDeleteDish: (id: string) => void;
   onMarkMessageAsRead: (id: string) => void;
   onDeleteReview: (id: string) => void;
   onNavigate: (page: PageView) => void;
@@ -60,6 +58,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onUpdateGallery,
   onUpdateSpecialties,
   onAddDish,
+  onDeleteDish,
   onMarkMessageAsRead,
   onDeleteReview,
   onNavigate 
@@ -619,57 +618,30 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         <div className="bg-gray-50 p-4 rounded-lg mb-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                           <div>
                             <p className="text-gray-500 mb-1">Client</p>
-                            <p className="font-medium flex items-center gap-2"><Users size={14} /> {order.customerName}</p>
-                            <p className="font-medium text-brand-orange flex items-center gap-2 mt-1"><Clock size={14} /> {order.customerPhone}</p>
+                            <p className="font-medium text-brand-brown flex items-center gap-2"><Users size={14}/> {order.customerName}</p>
+                            <p className="text-gray-600 ml-6">{order.customerPhone}</p>
                           </div>
-                          {order.deliveryMode === 'delivery' && (
+                          {order.customerAddress && (
                             <div>
                               <p className="text-gray-500 mb-1">Adresse</p>
-                              <p className="font-medium">{order.customerAddress}</p>
+                              <p className="font-medium text-brand-brown">{order.customerAddress}</p>
                             </div>
                           )}
                           {order.notes && (
-                            <div className="col-span-full border-t border-gray-200 pt-2 mt-2">
-                              <p className="text-gray-500 mb-1">Note du client</p>
-                              <p className="italic text-gray-700">"{order.notes}"</p>
+                            <div className="col-span-full border-t pt-2 mt-2">
+                              <p className="text-gray-500 mb-1 text-xs">Note du client</p>
+                              <p className="text-gray-700 italic">"{order.notes}"</p>
                             </div>
                           )}
                         </div>
 
-                        {/* Action Buttons */}
-                        <div className="flex flex-wrap gap-3 pt-2 border-t border-gray-100">
-                          {order.status === 'pending' && (
-                            <>
-                              <button 
-                                onClick={() => onUpdateOrderStatus(order.id, 'cooking')}
-                                className="flex-1 bg-brand-green text-white py-2 px-4 rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center justify-center gap-2"
-                              >
-                                <Check size={18} /> Accepter & Cuisiner
-                              </button>
-                              <button 
-                                onClick={() => onUpdateOrderStatus(order.id, 'cancelled')}
-                                className="flex-1 bg-red-100 text-red-600 py-2 px-4 rounded-lg font-medium hover:bg-red-200 transition-colors flex items-center justify-center gap-2"
-                              >
-                                <X size={18} /> Refuser
-                              </button>
-                            </>
-                          )}
-                          {order.status === 'cooking' && (
-                            <button 
-                              onClick={() => onUpdateOrderStatus(order.id, 'ready')}
-                              className="flex-1 bg-blue-500 text-white py-2 px-4 rounded-lg font-medium hover:bg-blue-600 transition-colors"
-                            >
-                              Marquer comme Prêt
-                            </button>
-                          )}
-                          {order.status === 'ready' && (
-                            <button 
-                              onClick={() => onUpdateOrderStatus(order.id, 'delivered')}
-                              className="flex-1 bg-brand-brown text-white py-2 px-4 rounded-lg font-medium hover:bg-gray-800 transition-colors"
-                            >
-                              Marquer comme Livré/Terminé
-                            </button>
-                          )}
+                        <div className="flex flex-wrap gap-2">
+                          <button onClick={() => onUpdateOrderStatus(order.id, 'cooking')} className="px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors text-sm font-bold">En Cuisine</button>
+                          <button onClick={() => onUpdateOrderStatus(order.id, 'ready')} className="px-4 py-2 bg-purple-50 text-purple-600 rounded-lg hover:bg-purple-100 transition-colors text-sm font-bold">Prêt</button>
+                          <button onClick={() => onUpdateOrderStatus(order.id, 'delivered')} className="px-4 py-2 bg-green-50 text-green-600 rounded-lg hover:bg-green-100 transition-colors text-sm font-bold flex items-center gap-1"><Check size={16}/> Livré</button>
+                          <button onClick={() => {
+                            if (window.confirm('Annuler cette commande ?')) onUpdateOrderStatus(order.id, 'cancelled');
+                          }} className="px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors text-sm font-bold ml-auto">Annuler</button>
                         </div>
                       </div>
                     </div>
@@ -686,131 +658,115 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <h2 className="text-2xl font-bold text-brand-brown">Gestion du Menu</h2>
                 <button 
                   onClick={() => setShowAddDishForm(!showAddDishForm)}
-                  className="bg-brand-orange text-white px-4 py-2 rounded-lg font-bold flex items-center gap-2 hover:bg-brand-brown transition-colors"
+                  className="bg-brand-orange text-white px-4 py-2 rounded-lg font-bold hover:bg-brand-brown transition-colors flex items-center gap-2 shadow-lg"
                 >
-                  {showAddDishForm ? <X size={20} /> : <Plus size={20} />}
-                  {showAddDishForm ? 'Annuler' : 'Ajouter un plat'}
+                  {showAddDishForm ? <X size={20} /> : <PlusCircle size={20} />}
+                  {showAddDishForm ? 'Fermer' : 'Nouveau Plat'}
                 </button>
               </div>
 
-              {/* Formulaire d'ajout */}
+              {/* Formulaire Ajout Plat */}
               {showAddDishForm && (
-                <div className="bg-white p-6 rounded-xl shadow-md mb-8 border border-brand-orange/20 animate-fade-in">
-                  <h3 className="font-bold text-lg mb-4 text-brand-brown">Nouveau Plat</h3>
-                  <form onSubmit={handleSubmitDish} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Nom du plat</label>
-                      <input 
-                        type="text" 
-                        required
-                        value={newDish.name}
-                        onChange={(e) => setNewDish({...newDish, name: e.target.value})}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-orange focus:outline-none"
-                        placeholder="Ex: Riz Jollof"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Catégorie</label>
-                      <select 
-                        value={newDish.category}
-                        onChange={(e) => setNewDish({...newDish, category: e.target.value as any})}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-orange focus:outline-none"
-                      >
-                        <option value="plat">Plat Principal</option>
-                        <option value="dessert">Dessert</option>
-                        <option value="boisson">Boisson</option>
-                      </select>
-                    </div>
-                    
-                    {/* Image Upload Section */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Image du plat</label>
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                           <label className="flex-1 cursor-pointer bg-brand-orange/10 hover:bg-brand-orange/20 text-brand-orange border border-dashed border-brand-orange rounded-lg p-3 text-center transition-colors flex items-center justify-center gap-2">
-                              <Upload size={18} />
-                              <span className="text-sm font-medium">Choisir une image</span>
-                              <input 
-                                type="file" 
-                                accept="image/*"
-                                onChange={handleImageUpload}
-                                className="hidden"
-                              />
-                           </label>
+                <div className="bg-white p-6 rounded-xl shadow-md border border-brand-orange mb-8 animate-fade-in-up">
+                  <h3 className="font-bold text-lg mb-4 text-brand-orange">Ajouter un plat au menu</h3>
+                  <form onSubmit={handleSubmitDish} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Nom du plat</label>
+                          <input 
+                            required
+                            type="text" 
+                            className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-brand-orange outline-none"
+                            value={newDish.name}
+                            onChange={(e) => setNewDish({...newDish, name: e.target.value})}
+                          />
                         </div>
-                        
-                        {newDish.image && (
-                          <div className="relative w-full h-40 rounded-lg overflow-hidden border border-gray-200 group mt-2">
-                            <img src={newDish.image} alt="Prévisualisation" className="w-full h-full object-cover" />
-                            <button 
-                              type="button"
-                              onClick={() => setNewDish(prev => ({...prev, image: ''}))}
-                              className="absolute top-2 right-2 bg-red-500 text-white p-1.5 rounded-full shadow-md opacity-0 group-hover:opacity-100 transition-opacity"
-                              title="Supprimer l'image"
-                            >
-                              <Trash2 size={16} />
-                            </button>
-                            <div className="absolute bottom-0 inset-x-0 bg-black/50 text-white text-xs p-1 text-center truncate">
-                              Aperçu
-                            </div>
-                          </div>
-                        )}
-                        {!newDish.image && (
-                          <div className="relative">
-                            <span className="text-xs text-gray-400 absolute right-3 top-2.5">ou URL</span>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Catégorie</label>
+                          <select 
+                            className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-brand-orange outline-none"
+                            value={newDish.category}
+                            onChange={(e) => setNewDish({...newDish, category: e.target.value as any})}
+                          >
+                            <option value="plat">Plat Principal</option>
+                            <option value="dessert">Dessert / Boisson</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                          <textarea 
+                            required
+                            rows={3}
+                            className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-brand-orange outline-none"
+                            value={newDish.description}
+                            onChange={(e) => setNewDish({...newDish, description: e.target.value})}
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                         <label className="block text-sm font-medium text-gray-700 mb-1">Image du plat</label>
+                         <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 flex flex-col items-center justify-center text-center hover:bg-gray-50 transition-colors cursor-pointer relative">
                             <input 
-                              type="text" 
-                              value={newDish.image}
-                              onChange={(e) => setNewDish({...newDish, image: e.target.value})}
-                              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-orange focus:outline-none text-sm pr-16"
-                              placeholder="https://..."
+                               type="file" 
+                               accept="image/*"
+                               onChange={handleImageUpload}
+                               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                             />
-                          </div>
-                        )}
+                            {newDish.image ? (
+                               <img src={newDish.image} alt="Preview" className="h-40 w-full object-cover rounded-md" />
+                            ) : (
+                               <>
+                                  <Upload className="text-gray-400 mb-2" size={32} />
+                                  <p className="text-sm text-gray-500">Cliquez pour télécharger une photo</p>
+                               </>
+                            )}
+                         </div>
                       </div>
                     </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                      <textarea 
-                        rows={5}
-                        value={newDish.description}
-                        onChange={(e) => setNewDish({...newDish, description: e.target.value})}
-                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-orange focus:outline-none"
-                        placeholder="Description appétissante du plat..."
-                      />
-                    </div>
-                    <div className="md:col-span-2 mt-2">
-                      <button 
-                        type="submit" 
-                        className="w-full bg-brand-green text-white py-3 rounded-lg font-bold hover:bg-brand-brown transition-colors shadow-lg"
-                      >
-                        Ajouter au Menu
+                    <div className="flex justify-end pt-4">
+                      <button type="submit" className="bg-brand-green text-white px-8 py-3 rounded-lg font-bold hover:bg-brand-brown transition-colors">
+                        Enregistrer le plat
                       </button>
                     </div>
                   </form>
                 </div>
               )}
-
-              <p className="text-gray-500 mb-8">Activez ou désactivez les plats selon ce qui reste en cuisine.</p>
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {menuItems.map((item) => (
-                  <div key={item.id} className={`bg-white rounded-xl shadow-sm border-2 overflow-hidden transition-all ${item.available ? 'border-transparent' : 'border-gray-200 opacity-75 grayscale'}`}>
-                    <div className="h-40 relative">
-                      <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
-                      <div className="absolute top-2 right-2">
-                        <button 
-                          onClick={() => onToggleAvailability(item.id)}
-                          className={`px-4 py-1.5 rounded-full text-sm font-bold shadow-md transition-colors ${item.available ? 'bg-green-500 text-white' : 'bg-red-500 text-white'}`}
-                        >
-                          {item.available ? 'DISPONIBLE' : 'ÉPUISÉ'}
-                        </button>
+                  <div key={item.id} className={`bg-white rounded-xl shadow-sm border p-4 flex flex-col gap-4 transition-all ${!item.available ? 'opacity-75 grayscale bg-gray-50' : ''}`}>
+                    <div className="flex gap-4">
+                      <img src={item.image} alt={item.name} className="w-20 h-20 rounded-lg object-cover bg-gray-200" />
+                      <div className="flex-1">
+                        <div className="flex justify-between items-start">
+                          <h3 className="font-bold text-brand-brown">{item.name}</h3>
+                          <span className="text-xs px-2 py-1 bg-gray-100 rounded text-gray-500 uppercase">{item.category}</span>
+                        </div>
+                        <p className="text-sm text-gray-500 mt-1 line-clamp-2">{item.description}</p>
                       </div>
                     </div>
-                    <div className="p-4">
-                      <h3 className="font-bold text-lg text-brand-brown">{item.name}</h3>
-                      <p className="text-gray-500 text-sm mt-2 line-clamp-2">{item.description}</p>
+                    
+                    <div className="flex items-center gap-2 pt-2 border-t">
+                      <button 
+                        onClick={() => onToggleAvailability(item.id)}
+                        className={`flex-1 py-2 rounded-lg font-bold text-sm transition-colors flex items-center justify-center gap-2 ${
+                          item.available 
+                            ? 'bg-green-100 text-green-700 hover:bg-green-200' 
+                            : 'bg-red-100 text-red-700 hover:bg-red-200'
+                        }`}
+                      >
+                        {item.available ? <><Check size={16} /> DISPONIBLE</> : <><X size={16} /> ÉPUISÉ</>}
+                      </button>
+                      <button 
+                        type="button"
+                        onClick={() => onDeleteDish(item.id)}
+                        className="p-2 bg-red-50 text-red-500 rounded-lg hover:bg-red-100 hover:text-red-700 transition-colors"
+                        title="Supprimer définitivement"
+                      >
+                        <Trash2 size={20} />
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -818,184 +774,117 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             </div>
           )}
 
-           {/* TAB: EXPERTISE (SAVOIR-FAIRE) */}
-           {activeTab === 'expertise' && (
-             <div className="animate-fade-in">
-               <h2 className="text-2xl font-bold text-brand-brown mb-6">Gestion du Savoir-Faire</h2>
-               
-               <div className="bg-white p-6 rounded-xl shadow-sm border border-brand-orange/20 mb-8">
-                 <h3 className="text-lg font-bold text-brand-orange mb-4">Ajouter une spécialité</h3>
-                 <form onSubmit={handleAddSpecialty} className="space-y-4">
-                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                     <div>
-                       <label className="block text-sm font-medium text-gray-700 mb-1">Nom du plat</label>
-                       <input 
-                         type="text" 
-                         required
-                         value={newSpecialty.name}
-                         onChange={(e) => setNewSpecialty({...newSpecialty, name: e.target.value})}
-                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-orange focus:outline-none"
-                         placeholder="Ex: Djenkoumé"
-                       />
-                     </div>
-                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Image</label>
-                        <div className="flex gap-2">
-                           <label className="cursor-pointer bg-brand-orange/10 hover:bg-brand-orange/20 text-brand-orange border border-dashed border-brand-orange rounded-lg p-2 text-center transition-colors flex items-center justify-center gap-2 flex-1">
-                              <Upload size={18} />
-                              <span className="text-xs font-medium">Uploader</span>
-                              <input 
+          {/* TAB: EXPERTISE (SAVOIR-FAIRE) */}
+          {activeTab === 'expertise' && (
+            <div className="animate-fade-in">
+              <h2 className="text-2xl font-bold text-brand-brown mb-6">Gestion du Savoir-Faire Culinaire</h2>
+
+              <div className="bg-white p-6 rounded-xl shadow-md border border-gray-200 mb-8">
+                  <h3 className="font-bold text-lg mb-4 text-brand-brown">Ajouter une spécialité</h3>
+                  <form onSubmit={handleAddSpecialty} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                       <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Nom du plat</label>
+                          <input 
+                            required
+                            type="text" 
+                            className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-brand-orange outline-none"
+                            value={newSpecialty.name}
+                            onChange={(e) => setNewSpecialty({...newSpecialty, name: e.target.value})}
+                          />
+                       </div>
+                       <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Courte description</label>
+                          <input 
+                            required
+                            type="text" 
+                            className="w-full p-2 border border-gray-300 rounded focus:ring-2 focus:ring-brand-orange outline-none"
+                            value={newSpecialty.description}
+                            onChange={(e) => setNewSpecialty({...newSpecialty, description: e.target.value})}
+                          />
+                       </div>
+                       <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Image</label>
+                          <div className="relative border border-gray-300 rounded bg-gray-50 hover:bg-gray-100 cursor-pointer h-[42px] flex items-center justify-center overflow-hidden">
+                             <input 
                                 type="file" 
                                 accept="image/*"
                                 onChange={handleSpecialtyImageUpload}
-                                className="hidden"
-                              />
-                           </label>
-                           {!newSpecialty.image && (
-                              <input 
-                                type="text" 
-                                value={newSpecialty.image}
-                                onChange={(e) => setNewSpecialty({...newSpecialty, image: e.target.value})}
-                                placeholder="ou lien URL..."
-                                className="flex-[2] px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-orange text-sm"
-                              />
-                           )}
-                        </div>
-                        {newSpecialty.image && (
-                           <div className="mt-2 relative h-20 w-full rounded-md overflow-hidden border">
-                              <img src={newSpecialty.image} alt="Aperçu" className="w-full h-full object-cover" />
-                              <button 
-                                 type="button" 
-                                 onClick={() => setNewSpecialty({...newSpecialty, image: ''})}
-                                 className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1"
-                              >
-                                 <X size={12} />
-                              </button>
-                           </div>
-                        )}
-                     </div>
-                   </div>
-                   <div>
-                     <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-                     <textarea 
-                       rows={3}
-                       required
-                       value={newSpecialty.description}
-                       onChange={(e) => setNewSpecialty({...newSpecialty, description: e.target.value})}
-                       className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-orange focus:outline-none"
-                       placeholder="Une brève description..."
-                     />
-                   </div>
-                   <div className="flex justify-end">
-                     <button 
-                       type="submit" 
-                       className="bg-brand-green text-white px-6 py-2 rounded-lg font-bold hover:bg-brand-brown transition-colors flex items-center gap-2"
-                     >
-                       <Plus size={18} /> Ajouter
-                     </button>
-                   </div>
-                 </form>
-               </div>
-
-               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                 {specialties.map((item) => (
-                   <div key={item.id} className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden flex flex-col group relative">
-                     <div className="h-40 relative">
-                       <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
-                       <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                          <button 
-                            onClick={() => handleRemoveSpecialty(item.id)}
-                            className="bg-red-500 text-white px-4 py-2 rounded-full font-bold hover:bg-red-600 flex items-center gap-2"
-                          >
-                            <Trash2 size={16} /> Supprimer
-                          </button>
+                                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                             />
+                             {newSpecialty.image ? (
+                                <span className="text-green-600 text-sm font-bold flex items-center gap-1"><Check size={14}/> Image chargée</span>
+                             ) : (
+                                <span className="text-gray-500 text-sm flex items-center gap-1"><Upload size={14}/> Choisir photo</span>
+                             )}
+                          </div>
                        </div>
-                     </div>
-                     <div className="p-4 flex-1">
-                       <h3 className="font-bold text-lg text-brand-orange mb-2">{item.name}</h3>
-                       <p className="text-gray-600 text-sm leading-relaxed">{item.description}</p>
-                     </div>
-                   </div>
-                 ))}
-               </div>
-             </div>
-           )}
+                    </div>
+                    <button type="submit" className="w-full bg-brand-brown text-white py-2 rounded font-bold hover:bg-brand-orange transition-colors">
+                       Ajouter cette spécialité
+                    </button>
+                  </form>
+              </div>
 
-           {/* TAB: GALERIE */}
-           {activeTab === 'gallery' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {specialties.map((item) => (
+                  <div key={item.id} className="bg-white rounded-xl shadow-sm border overflow-hidden group">
+                    <div className="h-40 overflow-hidden relative">
+                      <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                      <button 
+                         onClick={() => handleRemoveSpecialty(item.id)}
+                         className="absolute top-2 right-2 p-2 bg-white/80 hover:bg-red-500 hover:text-white rounded-full text-red-500 transition-colors shadow-sm opacity-0 group-hover:opacity-100"
+                      >
+                         <Trash2 size={16} />
+                      </button>
+                    </div>
+                    <div className="p-4">
+                      <h3 className="font-bold text-brand-brown">{item.name}</h3>
+                      <p className="text-sm text-gray-600 mt-1">{item.description}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* TAB: GALLERY */}
+          {activeTab === 'gallery' && (
             <div className="animate-fade-in">
               <h2 className="text-2xl font-bold text-brand-brown mb-6">Gestion de la Galerie</h2>
               
-              <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mb-8">
-                <h3 className="text-lg font-bold text-brand-orange mb-4">Ajouter une image</h3>
-                <form onSubmit={handleAddImage} className="space-y-4">
-                  
-                  {/* Image Preview Area */}
-                  {newImageUrl ? (
-                    <div className="relative w-full h-64 rounded-xl overflow-hidden border-2 border-brand-orange/20 group">
-                      <img src={newImageUrl} alt="Prévisualisation" className="w-full h-full object-cover" />
-                      <button 
-                        type="button"
-                        onClick={() => setNewImageUrl('')}
-                        className="absolute top-4 right-4 bg-red-500 text-white p-2 rounded-full shadow-lg hover:bg-red-600 transition-colors"
-                      >
-                        <X size={20} />
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="flex flex-col md:flex-row gap-4">
-                      {/* File Upload Trigger */}
-                      <label className="flex-1 h-32 cursor-pointer bg-brand-orange/5 hover:bg-brand-orange/10 border-2 border-dashed border-brand-orange/30 hover:border-brand-orange rounded-xl flex flex-col items-center justify-center gap-2 transition-all group">
-                          <div className="p-3 bg-brand-orange/10 text-brand-orange rounded-full group-hover:scale-110 transition-transform">
-                            <Upload size={24} />
-                          </div>
-                          <span className="text-sm font-bold text-brand-brown">Télécharger depuis l'appareil</span>
-                          <span className="text-xs text-gray-500">JPG, PNG</span>
-                          <input 
-                            type="file" 
-                            accept="image/*"
-                            onChange={handleGalleryFileUpload}
-                            className="hidden"
-                          />
-                      </label>
-                      
-                      {/* URL Input */}
-                      <div className="flex-1 flex flex-col justify-center gap-2">
-                        <label className="text-sm font-medium text-gray-700">Ou via lien URL</label>
-                        <div className="flex gap-2">
-                          <input 
-                            type="text" 
-                            value={newImageUrl}
-                            onChange={(e) => setNewImageUrl(e.target.value)}
-                            placeholder="https://..."
-                            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-orange focus:outline-none"
-                          />
-                        </div>
+              <div className="bg-white p-6 rounded-xl shadow-sm mb-8">
+                <h3 className="font-bold mb-4">Ajouter une nouvelle image</h3>
+                <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 flex flex-col items-center justify-center text-center hover:bg-gray-50 transition-colors cursor-pointer relative">
+                    <input 
+                       type="file" 
+                       accept="image/*"
+                       onChange={handleGalleryFileUpload}
+                       className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    />
+                    <Upload className="text-gray-400 mb-2" size={48} />
+                    <p className="text-lg font-medium text-gray-600">Glissez une image ou cliquez pour parcourir</p>
+                    <p className="text-sm text-gray-400 mt-1">PNG, JPG jusqu'à 5MB</p>
+                </div>
+                {newImageUrl && (
+                   <div className="mt-4 flex items-center gap-4 bg-green-50 p-4 rounded-lg border border-green-200">
+                      <img src={newImageUrl} alt="Preview" className="w-16 h-16 rounded object-cover" />
+                      <div className="flex-1">
+                         <p className="text-green-800 font-medium">Image prête à être ajoutée</p>
                       </div>
-                    </div>
-                  )}
-
-                  <div className="flex justify-end">
-                    <button 
-                      type="submit"
-                      disabled={!newImageUrl}
-                      className="bg-brand-green text-white px-8 py-3 rounded-lg font-bold hover:bg-brand-brown transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
-                    >
-                      <PlusCircle size={20} /> Ajouter à la galerie
-                    </button>
-                  </div>
-                </form>
+                      <button onClick={handleAddImage} className="bg-green-600 text-white px-4 py-2 rounded font-bold hover:bg-green-700">Confirmer l'ajout</button>
+                   </div>
+                )}
               </div>
 
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {galleryImages.map((img, idx) => (
-                  <div key={idx} className="relative group rounded-lg overflow-hidden aspect-square border-2 border-transparent hover:border-red-400">
-                    <img src={img} alt={`Galerie ${idx}`} className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <div key={idx} className="relative group rounded-lg overflow-hidden aspect-square border shadow-sm">
+                    <img src={img} alt={`Gallery ${idx}`} className="w-full h-full object-cover" />
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                       <button 
                         onClick={() => handleRemoveImage(idx)}
-                        className="bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-colors"
-                        title="Supprimer l'image"
+                        className="bg-red-500 text-white p-3 rounded-full hover:bg-red-600 transition-colors"
                       >
                         <Trash2 size={24} />
                       </button>
@@ -1009,48 +898,35 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
           {/* TAB: MESSAGES */}
           {activeTab === 'messages' && (
             <div className="animate-fade-in">
-              <h2 className="text-2xl font-bold text-brand-brown mb-6 flex items-center gap-3">
-                Messages Reçus
-                {unreadMessages > 0 && <span className="bg-red-500 text-white text-sm px-3 py-1 rounded-full">{unreadMessages} non lus</span>}
-              </h2>
-              
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 divide-y divide-gray-100">
+              <h2 className="text-2xl font-bold text-brand-brown mb-6">Messages Reçus</h2>
+              <div className="space-y-4">
                 {messages.length === 0 ? (
-                  <div className="p-12 text-center text-gray-500">Aucun message pour le moment.</div>
+                  <p className="text-gray-500 italic">Aucun message pour le moment.</p>
                 ) : (
                   messages.map((msg) => (
-                    <div 
-                      key={msg.id} 
-                      className={`p-6 transition-colors ${!msg.read ? 'bg-orange-50 border-l-4 border-brand-orange' : 'hover:bg-gray-50 bg-white'}`}
-                    >
+                    <div key={msg.id} className={`bg-white p-6 rounded-xl shadow-sm border transition-all ${!msg.read ? 'border-l-4 border-l-brand-orange ring-1 ring-orange-100 bg-orange-50/10' : 'border-gray-200'}`}>
                       <div className="flex justify-between items-start mb-2">
                         <div className="flex items-center gap-2">
-                          <h3 className={`font-bold ${!msg.read ? 'text-brand-orange' : 'text-brand-brown'}`}>
-                            {msg.name}
-                          </h3>
-                          {!msg.read && (
-                            <span className="px-2 py-0.5 bg-brand-orange text-white text-[10px] uppercase font-bold rounded">Nouveau</span>
-                          )}
+                           <h3 className="font-bold text-brand-brown">{msg.name}</h3>
+                           {!msg.read && <span className="bg-red-500 text-white text-[10px] uppercase font-bold px-2 py-0.5 rounded">Nouveau</span>}
                         </div>
-                        <span className="text-xs text-gray-400">{new Date(msg.date).toLocaleDateString()} {new Date(msg.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                        <span className="text-sm text-gray-400">{formatDate(msg.date)}</span>
                       </div>
-                      <p className="text-sm text-gray-500 font-medium mb-2">{msg.phone}</p>
-                      <p className="text-gray-600 bg-white p-3 rounded-lg border border-gray-100 shadow-sm mb-3">"{msg.message}"</p>
+                      <div className="text-sm text-gray-500 mb-2 flex flex-col sm:flex-row sm:gap-4">
+                         <span><span className="font-medium text-gray-700">Tél:</span> {msg.phone}</span>
+                      </div>
+                      <p className="text-gray-700 bg-gray-50 p-3 rounded-lg border border-gray-100 mb-3">{msg.message}</p>
                       
-                      <div className="flex justify-end">
-                        {!msg.read ? (
-                          <button 
-                            onClick={() => onMarkMessageAsRead(msg.id)}
-                            className="text-sm bg-white border border-gray-200 text-gray-600 px-3 py-1.5 rounded-lg hover:bg-brand-green hover:text-white hover:border-transparent transition-colors flex items-center gap-2"
-                          >
-                            <MailOpen size={14} /> Marquer comme lu
-                          </button>
-                        ) : (
-                          <span className="text-xs text-gray-400 flex items-center gap-1">
-                             <Check size={12} /> Lu
-                          </span>
-                        )}
-                      </div>
+                      {!msg.read ? (
+                        <button 
+                          onClick={() => onMarkMessageAsRead(msg.id)}
+                          className="text-sm text-brand-orange hover:text-brand-brown font-medium flex items-center gap-1"
+                        >
+                          <MailOpen size={16} /> Marquer comme lu
+                        </button>
+                      ) : (
+                        <span className="text-xs text-green-600 flex items-center gap-1 font-medium"><Check size={14} /> Lu</span>
+                      )}
                     </div>
                   ))
                 )}
@@ -1061,63 +937,65 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
           {/* TAB: REVIEWS (AVIS) */}
           {activeTab === 'reviews' && (
             <div className="animate-fade-in">
-              <h2 className="text-2xl font-bold text-brand-brown mb-6 flex items-center gap-3">
-                Avis Clients
-              </h2>
-
-              {/* Stats Card */}
-              <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 mb-8 flex flex-col md:flex-row items-center justify-between gap-6">
-                 <div className="flex items-center gap-6">
-                    <div className="text-center p-4 bg-brand-orange/10 rounded-xl">
-                       <span className="block text-4xl font-bold text-brand-orange">{averageRating}</span>
-                       <span className="text-xs text-gray-500 uppercase font-bold">Note Moyenne</span>
+              <h2 className="text-2xl font-bold text-brand-brown mb-6">Avis Clients</h2>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                 <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex items-center gap-4">
+                    <div className="p-4 bg-yellow-100 text-yellow-600 rounded-full">
+                       <Star size={32} className="fill-yellow-600" />
                     </div>
                     <div>
-                       <div className="flex gap-1 mb-2">
-                          {[1, 2, 3, 4, 5].map(i => (
-                             <Star key={i} size={24} className={`${i <= Math.round(Number(averageRating)) ? 'fill-brand-orange text-brand-orange' : 'text-gray-300'}`} />
-                          ))}
-                       </div>
-                       <p className="text-gray-600">Basé sur <strong>{reviews.length}</strong> avis vérifiés.</p>
+                       <p className="text-gray-500 text-sm">Note Moyenne</p>
+                       <p className="text-3xl font-bold text-brand-brown">{averageRating} <span className="text-sm text-gray-400 font-normal">/ 5</span></p>
+                    </div>
+                 </div>
+                 <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex items-center gap-4">
+                    <div className="p-4 bg-blue-100 text-blue-600 rounded-full">
+                       <MessageSquare size={32} />
+                    </div>
+                    <div>
+                       <p className="text-gray-500 text-sm">Total Avis</p>
+                       <p className="text-3xl font-bold text-brand-brown">{reviews.length}</p>
                     </div>
                  </div>
               </div>
-              
-              <div className="grid grid-cols-1 gap-4">
-                {reviews.length === 0 ? (
-                  <div className="p-12 text-center text-gray-500 bg-white rounded-xl border border-gray-100">Aucun avis pour le moment.</div>
-                ) : (
-                  // Sécurisation du tri par date et copie du tableau
-                  [...reviews].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((review) => (
-                    <div key={review.id} className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between gap-4">
-                      <div>
-                        <div className="flex items-center gap-3 mb-2">
-                           <div className="flex gap-0.5">
-                              {[1, 2, 3, 4, 5].map(i => (
-                                 <Star key={i} size={14} className={`${i <= review.rating ? 'fill-brand-orange text-brand-orange' : 'text-gray-300'}`} />
-                              ))}
-                           </div>
-                           <span className="font-bold text-brand-brown">{review.author}</span>
-                           <span className="text-gray-400 text-xs">• {new Date(review.date).toLocaleDateString()}</span>
-                        </div>
-                        <p className="text-gray-600 italic">"{review.comment}"</p>
-                      </div>
-                      <div>
-                         <button 
-                           type="button"
-                           onClick={() => {
-                              if(window.confirm('Êtes-vous sûr de vouloir supprimer cet avis ?')) {
-                                 onDeleteReview(review.id);
-                              }
-                           }}
-                           className="text-red-400 hover:text-red-600 p-2 hover:bg-red-50 rounded-lg transition-colors flex items-center gap-2 text-sm"
-                         >
-                            <Trash2 size={16} /> Supprimer
-                         </button>
-                      </div>
-                    </div>
-                  ))
-                )}
+
+              <div className="space-y-4">
+                 {reviews.length === 0 ? (
+                    <p className="text-gray-500">Aucun avis pour le moment.</p>
+                 ) : (
+                    // Utilisation de [...reviews] pour créer une copie avant le tri, afin d'éviter la mutation directe des props
+                    [...reviews].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map((review) => (
+                       <div key={review.id} className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                          <div className="flex justify-between items-start mb-3">
+                             <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 bg-brand-brown text-white rounded-full flex items-center justify-center font-bold">
+                                   {review.author.charAt(0)}
+                                </div>
+                                <div>
+                                   <p className="font-bold text-brand-brown">{review.author}</p>
+                                   <p className="text-xs text-gray-400">{new Date(review.date).toLocaleDateString()}</p>
+                                </div>
+                             </div>
+                             <div className="flex gap-1">
+                                {[1,2,3,4,5].map(star => (
+                                   <Star key={star} size={16} className={`${star <= review.rating ? 'fill-brand-orange text-brand-orange' : 'text-gray-300'}`} />
+                                ))}
+                             </div>
+                          </div>
+                          <p className="text-gray-700 italic bg-gray-50 p-3 rounded-lg mb-4">"{review.comment}"</p>
+                          <div className="flex justify-end">
+                             <button 
+                                type="button"
+                                onClick={() => onDeleteReview(review.id)}
+                                className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-600 hover:text-white transition-all font-bold text-sm"
+                             >
+                                <Trash2 size={16} /> Supprimer cet avis
+                             </button>
+                          </div>
+                       </div>
+                    ))
+                 )}
               </div>
             </div>
           )}
@@ -1127,145 +1005,129 @@ const AdminDashboard: React.FC<AdminDashboardProps> = ({
             <div className="animate-fade-in">
               <h2 className="text-2xl font-bold text-brand-brown mb-6">Informations du Restaurant</h2>
               
-              <form onSubmit={handleSaveSettings} className="bg-white p-8 rounded-xl shadow-sm border border-gray-100 w-full">
-                
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 w-full">
-                  
-                  {/* LEFT COLUMN: Main Info */}
-                  <div className="space-y-6">
-                    {/* Section Image À Propos */}
-                    <div>
-                      <h3 className="text-lg font-bold text-brand-orange mb-4 border-b pb-2">Image "Notre Histoire"</h3>
-                      <div className="space-y-4">
-                        <label className="flex flex-col items-center justify-center w-full h-48 border-2 border-brand-orange/30 border-dashed rounded-lg cursor-pointer bg-brand-orange/5 hover:bg-brand-orange/10 transition-colors">
-                          {localSettings.aboutImage ? (
-                            <div className="relative w-full h-full rounded-lg overflow-hidden group">
-                              <img src={localSettings.aboutImage} alt="À propos" className="w-full h-full object-cover" />
-                              <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                                  <span className="text-white font-medium flex items-center gap-2"><Upload size={20} /> Changer l'image</span>
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                                <Upload className="w-10 h-10 mb-3 text-brand-orange" />
-                                <p className="mb-2 text-sm text-gray-500"><span className="font-semibold">Cliquez pour changer l'image</span></p>
-                                <p className="text-xs text-gray-500">JPG, PNG (MAX. 800x600px)</p>
-                            </div>
-                          )}
-                          <input type="file" className="hidden" accept="image/*" onChange={handleAboutImageUpload} />
-                        </label>
-                      </div>
-                    </div>
-
-                    <div>
-                      <h3 className="text-lg font-bold text-brand-orange mb-4 border-b pb-2">Coordonnées</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Numéro de Téléphone</label>
-                          <input 
-                            type="text" 
-                            value={localSettings.phoneNumber}
-                            onChange={(e) => setLocalSettings({...localSettings, phoneNumber: e.target.value})}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-orange focus:outline-none"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Adresse</label>
-                          <input 
-                            type="text" 
-                            value={localSettings.address}
-                            onChange={(e) => setLocalSettings({...localSettings, address: e.target.value})}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-orange focus:outline-none"
-                          />
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                 {/* COLONNE GAUCHE: Info Générales */}
+                 <div className="space-y-8">
+                    <form onSubmit={handleSaveSettings} className="bg-white p-6 rounded-xl shadow-md space-y-6">
+                      
+                      <div>
+                        <h3 className="text-brand-orange font-bold border-b pb-2 mb-4">Image "Notre Histoire"</h3>
+                        {localSettings.aboutImage && (
+                          <div className="mb-4 h-40 overflow-hidden rounded-lg border border-gray-200 relative">
+                             <img src={localSettings.aboutImage} alt="About" className="w-full h-full object-cover" />
+                             <div className="absolute inset-0 bg-black/20"></div>
+                          </div>
+                        )}
+                        <div className="relative border-2 border-dashed border-gray-300 rounded-lg p-4 text-center hover:bg-gray-50 cursor-pointer">
+                           <input 
+                             type="file" 
+                             accept="image/*"
+                             onChange={handleAboutImageUpload}
+                             className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                           />
+                           <p className="text-sm text-gray-500 flex items-center justify-center gap-2"><Upload size={16}/> Changer la photo</p>
                         </div>
                       </div>
-                    </div>
 
-                    <div>
-                      <h3 className="text-lg font-bold text-brand-orange mb-4 border-b pb-2">Horaires d'Ouverture</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Semaine (Lun-Sam)</label>
-                          <input 
-                            type="text" 
-                            value={localSettings.openingHoursWeek}
-                            onChange={(e) => setLocalSettings({...localSettings, openingHoursWeek: e.target.value})}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-orange focus:outline-none"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Dimanche</label>
-                          <input 
-                            type="text" 
-                            value={localSettings.openingHoursSunday}
-                            onChange={(e) => setLocalSettings({...localSettings, openingHoursSunday: e.target.value})}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-orange focus:outline-none"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* RIGHT COLUMN: Social Media */}
-                  <div className="space-y-6">
-                    <div>
-                      <h3 className="text-lg font-bold text-brand-orange mb-4 border-b pb-2">Réseaux Sociaux</h3>
-                      <div className="space-y-4">
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Lien Facebook</label>
-                          <input 
-                            type="text" 
-                            value={localSettings.socialLinks.facebook}
-                            onChange={(e) => setLocalSettings({
-                              ...localSettings, 
-                              socialLinks: {...localSettings.socialLinks, facebook: e.target.value}
-                            })}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-orange focus:outline-none"
-                            placeholder="https://facebook.com/..."
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Lien Instagram</label>
-                          <input 
-                            type="text" 
-                            value={localSettings.socialLinks.instagram}
-                            onChange={(e) => setLocalSettings({
-                              ...localSettings, 
-                              socialLinks: {...localSettings.socialLinks, instagram: e.target.value}
-                            })}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-orange focus:outline-none"
-                            placeholder="https://instagram.com/..."
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-1">Lien Twitter / X</label>
-                          <input 
-                            type="text" 
-                            value={localSettings.socialLinks.twitter}
-                            onChange={(e) => setLocalSettings({
-                              ...localSettings, 
-                              socialLinks: {...localSettings.socialLinks, twitter: e.target.value}
-                            })}
-                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-brand-orange focus:outline-none"
-                            placeholder="https://twitter.com/..."
-                          />
+                      <div>
+                        <h3 className="text-brand-orange font-bold border-b pb-2 mb-4">Coordonnées</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-xs font-bold text-gray-500 mb-1">Numéro de Téléphone</label>
+                            <input 
+                              type="text" 
+                              className="w-full p-2 bg-gray-50 border border-gray-200 rounded focus:ring-1 focus:ring-brand-orange outline-none"
+                              value={localSettings.phoneNumber}
+                              onChange={(e) => setLocalSettings({...localSettings, phoneNumber: e.target.value})}
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-gray-500 mb-1">Adresse</label>
+                            <input 
+                              type="text" 
+                              className="w-full p-2 bg-gray-50 border border-gray-200 rounded focus:ring-1 focus:ring-brand-orange outline-none"
+                              value={localSettings.address}
+                              onChange={(e) => setLocalSettings({...localSettings, address: e.target.value})}
+                            />
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  </div>
 
-                </div>
+                      <div>
+                        <h3 className="text-brand-orange font-bold border-b pb-2 mb-4">Horaires d'Ouverture</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-xs font-bold text-gray-500 mb-1">Semaine (Lun-Sam)</label>
+                            <input 
+                              type="text" 
+                              className="w-full p-2 bg-gray-50 border border-gray-200 rounded focus:ring-1 focus:ring-brand-orange outline-none"
+                              value={localSettings.openingHoursWeek}
+                              onChange={(e) => setLocalSettings({...localSettings, openingHoursWeek: e.target.value})}
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-xs font-bold text-gray-500 mb-1">Dimanche</label>
+                            <input 
+                              type="text" 
+                              className="w-full p-2 bg-gray-50 border border-gray-200 rounded focus:ring-1 focus:ring-brand-orange outline-none"
+                              value={localSettings.openingHoursSunday}
+                              onChange={(e) => setLocalSettings({...localSettings, openingHoursSunday: e.target.value})}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <button type="submit" className="w-full bg-brand-green text-white py-3 rounded-lg font-bold hover:bg-brand-brown transition-colors flex items-center justify-center gap-2">
+                         <Save size={18} /> Enregistrer les modifications
+                      </button>
+                    </form>
+                 </div>
 
-                <div className="pt-8 border-t border-gray-100 mt-8">
-                  <button 
-                    type="submit" 
-                    className="w-full bg-brand-green text-white py-4 rounded-lg font-bold hover:bg-brand-brown transition-colors flex items-center justify-center gap-2 shadow-lg"
-                  >
-                    <Save size={20} /> Enregistrer les modifications
-                  </button>
-                </div>
+                 {/* COLONNE DROITE: Réseaux Sociaux */}
+                 <div className="space-y-8">
+                    <form onSubmit={handleSaveSettings} className="bg-white p-6 rounded-xl shadow-md h-full">
+                       <h3 className="text-brand-orange font-bold border-b pb-2 mb-6">Réseaux Sociaux</h3>
+                       <div className="space-y-4">
+                          <div>
+                             <label className="block text-xs font-bold text-gray-500 mb-1">Lien Facebook</label>
+                             <input 
+                                type="text" 
+                                className="w-full p-3 bg-gray-50 border border-gray-200 rounded focus:ring-1 focus:ring-brand-orange outline-none"
+                                value={localSettings.socialLinks.facebook}
+                                onChange={(e) => setLocalSettings({...localSettings, socialLinks: {...localSettings.socialLinks, facebook: e.target.value}})}
+                             />
+                          </div>
+                          <div>
+                             <label className="block text-xs font-bold text-gray-500 mb-1">Lien Instagram</label>
+                             <input 
+                                type="text" 
+                                className="w-full p-3 bg-gray-50 border border-gray-200 rounded focus:ring-1 focus:ring-brand-orange outline-none"
+                                value={localSettings.socialLinks.instagram}
+                                onChange={(e) => setLocalSettings({...localSettings, socialLinks: {...localSettings.socialLinks, instagram: e.target.value}})}
+                             />
+                          </div>
+                          <div>
+                             <label className="block text-xs font-bold text-gray-500 mb-1">Lien Twitter / X</label>
+                             <input 
+                                type="text" 
+                                className="w-full p-3 bg-gray-50 border border-gray-200 rounded focus:ring-1 focus:ring-brand-orange outline-none"
+                                value={localSettings.socialLinks.twitter}
+                                onChange={(e) => setLocalSettings({...localSettings, socialLinks: {...localSettings.socialLinks, twitter: e.target.value}})}
+                             />
+                          </div>
+                       </div>
+                       <div className="mt-8 p-4 bg-brand-cream/30 rounded-lg text-sm text-gray-500 border border-brand-orange/10">
+                          <p className="flex items-center gap-2"><Info size={16} /> Ces liens apparaîtront dans le pied de page du site.</p>
+                       </div>
+                       
+                       {/* Bouton doublé ici pour ergonomie */}
+                       <button type="submit" className="w-full mt-8 bg-brand-brown text-white py-3 rounded-lg font-bold hover:bg-brand-orange transition-colors flex items-center justify-center gap-2">
+                         <Save size={18} /> Enregistrer les réseaux sociaux
+                      </button>
+                    </form>
+                 </div>
+              </div>
 
-              </form>
             </div>
           )}
 
