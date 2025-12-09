@@ -1,5 +1,5 @@
 import React from 'react';
-import { Facebook, Instagram, Twitter, Lock } from 'lucide-react';
+import { Facebook, Instagram, Twitter } from 'lucide-react';
 import { PageView, SiteSettings } from '../types';
 
 interface FooterProps {
@@ -37,14 +37,8 @@ const Footer: React.FC<FooterProps> = ({ onNavigate, settings }) => {
             </div>
           </div>
         </div>
-        <div className="border-t border-white/10 pt-8 flex flex-col md:flex-row justify-between items-center text-sm text-brand-cream/50 gap-4">
+        <div className="border-t border-white/10 pt-8 text-center text-sm text-brand-cream/50">
           <p>&copy; {new Date().getFullYear()} Maman Mangé. Tous droits réservés.</p>
-          <button 
-            onClick={() => onNavigate?.('admin')}
-            className="flex items-center gap-1 hover:text-brand-orange transition-colors opacity-60 hover:opacity-100"
-          >
-            <Lock size={12} /> Espace Pro
-          </button>
         </div>
       </div>
     </footer>

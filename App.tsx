@@ -1,311 +1,537 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
-import Hero from './components/Hero';
-import Menu from './components/Menu';
-import About from './components/About';
-import Services from './components/Services';
-import Gallery from './components/Gallery';
-import Contact from './components/Contact';
 import Footer from './components/Footer';
-import AdminDashboard from './components/AdminDashboard';
-import Reviews from './components/Reviews';
+// Lazy load components for better performance
+const Hero = lazy(() => import('./components/Hero'));
+const Menu = lazy(() => import('./components/Menu'));
+const About = lazy(() => import('./components/About'));
+const Services = lazy(() => import('./components/Services'));
+const Gallery = lazy(() => import('./components/Gallery'));
+const Contact = lazy(() => import('./components/Contact'));
+const AdminDashboard = lazy(() => import('./components/AdminDashboard'));
+const Reviews = lazy(() => import('./components/Reviews'));
+const Login = lazy(() => import('./components/Login'));
+const Signup = lazy(() => import('./components/Signup'));
 import { PageView, Dish, Order, ContactMessage, Review, SiteSettings, OrderStatus, SpecialtyItem } from './types';
+import {
+  fetchDishes, createDish, deleteDish, updateDishAvailability,
+  fetchOrders, createOrder, updateOrderStatus, deleteOrder,
+  fetchMessages, createMessage, markMessageAsRead, deleteMessage,
+  fetchReviews, createReview, deleteReview,
+  fetchSpecialties, createSpecialty, deleteSpecialty,
+  fetchSettings, updateSettings,
+  fetchGalleryImages, addGalleryImage, deleteGalleryImage,
+  getCurrentUser, signOut,
+  subscribeToOrders, subscribeToMessages, subscribeToReviews
+} from './services/supabase';
 
-// Données initiales du menu déplacées ici pour être modifiables
-const INITIAL_MENU: Dish[] = [
-  {
-    id: '1',
-    name: 'Pâte Rouge & Poulet',
-    description: 'Une délicieuse pâte de maïs à la tomate (Akoumé), servie avec une sauce graine riche et du poulet braisé.',
-    price: 3500,
-    category: 'plat',
-    image: 'https://picsum.photos/seed/pate/400/300',
-    available: true
-  },
-  {
-    id: '2',
-    name: 'Foufou Royal',
-    description: 'Igname pilée onctueuse accompagnée de sa sauce claire au poisson frais et épices du village.',
-    price: 4000,
-    category: 'plat',
-    image: 'https://picsum.photos/seed/foufou/400/300',
-    available: true
-  },
-  {
-    id: '3',
-    name: 'Koliko & Brochettes',
-    description: 'Frites d\'igname croustillantes servies avec des brochettes de boeuf marinées et du piment noir.',
-    price: 2500,
-    category: 'plat',
-    image: 'https://picsum.photos/seed/koliko/400/300',
-    available: true
-  },
-  {
-    id: '4',
-    name: 'Pinon au Porc',
-    description: 'Pâte de gari assaisonnée et cuisinée avec des morceaux de porc frits. Un classique savoureux.',
-    price: 3000,
-    category: 'plat',
-    image: 'https://picsum.photos/seed/pinon/400/300',
-    available: true
-  },
-  {
-    id: '5',
-    name: 'Riz Gras Africain',
-    description: 'Riz cuit dans un bouillon de légumes et viande, parfumé et coloré, servi avec salade.',
-    price: 2000,
-    category: 'plat',
-    image: 'https://picsum.photos/seed/riz/400/300',
-    available: true
-  },
-  {
-    id: '6',
-    name: 'Akpan Nature',
-    description: 'Yaourt de maïs fermenté rafraîchissant, servi avec du lait et des glaçons. Idéal comme dessert.',
-    price: 500,
-    category: 'dessert',
-    image: 'https://picsum.photos/seed/akpan/400/300',
-    available: true
-  }
-];
-
-const INITIAL_SPECIALTIES: SpecialtyItem[] = [
-  {
-    id: '1',
-    name: "Djenkoumé (Pâte rouge)",
-    description: "La spécialité de la maison. Une pâte de maïs à la tomate savoureuse accompagnée de poulet frit.",
-    image: "https://picsum.photos/seed/djenkoume/400/300"
-  },
-  {
-    id: '2',
-    name: "Ayimolou (Riz & Haricot)",
-    description: "Le plat du peuple, sublimé par Maman avec un piment noir dont elle seule a le secret.",
-    image: "https://picsum.photos/seed/ayimolou/400/300"
-  },
-  {
-    id: '3',
-    name: "Foufou & Sauce Claire",
-    description: "De l'igname pilée à la main, servie avec une sauce légère au poisson frais.",
-    image: "https://picsum.photos/seed/foufou/400/300"
-  },
-  {
-    id: '4',
-    name: "Ablo & Poisson",
-    description: "Petites galettes de riz fermenté cuites à la vapeur, servies avec une sauce tomate pimentée.",
-    image: "https://picsum.photos/seed/ablo/400/300"
-  },
-  {
-    id: '5',
-    name: "Gboma Dessi",
-    description: "Sauce épinard riche en viande de boeuf et crevettes, accompagnée de pâte blanche.",
-    image: "https://picsum.photos/seed/gboma/400/300"
-  },
-  {
-    id: '6',
-    name: "Kom & Piment Noir",
-    description: "Pâte de maïs fermentée (Kenkey) avec des sardines frites et du piment shito.",
-    image: "https://picsum.photos/seed/kom/400/300"
-  }
-];
-
-const INITIAL_REVIEWS: Review[] = [
-  {
-    id: '1',
-    author: 'Koffi A.',
-    rating: 5,
-    comment: 'Le foufou était incroyable, exactement comme au village. Je recommande vivement !',
-    date: new Date('2023-10-15')
-  },
-  {
-    id: '2',
-    author: 'Sarah M.',
-    rating: 4,
-    comment: 'Très bon accueil et les plats sont copieux. Le piment noir est une tuerie.',
-    date: new Date('2023-10-18')
-  },
-  {
-    id: '3',
-    author: 'Jean-Pierre',
-    rating: 5,
-    comment: 'Maman Mangé porte bien son nom. On sent l\'amour dans la cuisine. Livraison rapide.',
-    date: new Date('2023-10-20')
-  }
-];
-
+// Fallback initial data
 const INITIAL_SETTINGS: SiteSettings = {
   phoneNumber: '+228 90 00 00 00',
   address: 'Quartier du Bonheur, Rue de la Paix, Lomé',
   openingHoursWeek: 'Lundi - Samedi : 11h00 - 22h00',
   openingHoursSunday: 'Dimanche : 12h00 - 20h00',
-  socialLinks: {
-    facebook: '#',
-    instagram: '#',
-    twitter: '#'
-  },
+  socialLinks: { facebook: '#', instagram: '#', twitter: '#' },
   aboutImage: 'https://picsum.photos/seed/cook/600/800'
 };
 
-const INITIAL_GALLERY_IMAGES = [
-  'https://picsum.photos/seed/food1/500/500',
-  'https://picsum.photos/seed/food2/500/500',
-  'https://picsum.photos/seed/food3/500/500',
-  'https://picsum.photos/seed/restaurant1/500/500',
-  'https://picsum.photos/seed/food4/500/500',
-  'https://picsum.photos/seed/people/500/500',
-];
+// Component wrapper that provides navigation
+const HomePage: React.FC<any> = ({ menuItems, handleAddOrder, specialties, siteSettings, galleryImages, reviews, handleAddReview, handleAddMessage }) => {
+  const navigate = useNavigate();
+  return (
+    <>
+      <Hero onNavigate={(page) => navigate(page === 'home' ? '/' : `/${page}`)} />
+      <Menu menuItems={menuItems} onAddOrder={handleAddOrder} />
+      <Services specialties={specialties} />
+      <About image={siteSettings.aboutImage} />
+      <Gallery images={galleryImages} />
+      <Reviews reviews={reviews} onAddReview={handleAddReview} />
+      <Contact onSendMessage={handleAddMessage} settings={siteSettings} />
+    </>
+  );
+};
 
-const App: React.FC = () => {
-  const [currentPage, setCurrentPage] = useState<PageView>('home');
-  
-  // États partagés
-  const [menuItems, setMenuItems] = useState<Dish[]>(INITIAL_MENU);
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [messages, setMessages] = useState<ContactMessage[]>([]);
-  const [reviews, setReviews] = useState<Review[]>(INITIAL_REVIEWS);
-  const [siteSettings, setSiteSettings] = useState<SiteSettings>(INITIAL_SETTINGS);
-  const [galleryImages, setGalleryImages] = useState<string[]>(INITIAL_GALLERY_IMAGES);
-  const [specialties, setSpecialties] = useState<SpecialtyItem[]>(INITIAL_SPECIALTIES);
+// Protected route wrapper for admin
+const ProtectedAdminRoute: React.FC<{ user: any; isLoading: boolean; children: React.ReactNode }> = ({ user, isLoading, children }) => {
+  if (isLoading) {
+    return <div className="min-h-screen flex items-center justify-center text-brand-brown">Vérification...</div>;
+  }
 
-  // Actions pour le Dashboard
-  const toggleDishAvailability = (id: string) => {
-    setMenuItems(prev => prev.map(item => 
-      item.id === id ? { ...item, available: !item.available } : item
-    ));
-  };
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
 
-  const updateOrderStatus = (orderId: string, status: OrderStatus) => {
-    setOrders(prev => prev.map(order => 
-      order.id === orderId ? { ...order, status } : order
-    ));
-  };
+  return <>{children}</>;
+};
 
-  const handleDeleteOrder = (id: string) => {
-    setOrders(prev => prev.filter(order => order.id !== id));
-  };
+// Admin Dashboard Wrapper with logout redirect
+const AdminDashboardWrapper: React.FC<any> = (props) => {
+  const navigate = useNavigate();
 
-  const updateSiteSettings = (newSettings: SiteSettings) => {
-    setSiteSettings(newSettings);
-  };
-
-  const updateGalleryImages = (newImages: string[]) => {
-    setGalleryImages(newImages);
-  };
-
-  const updateSpecialties = (newSpecialties: SpecialtyItem[]) => {
-    setSpecialties(newSpecialties);
-  };
-
-  const handleAddDish = (newDish: Dish) => {
-    setMenuItems(prev => [newDish, ...prev]);
-  };
-
-  const handleDeleteDish = (id: string) => {
-    setMenuItems(prev => prev.filter(item => item.id !== id));
-  };
-
-  const handleMarkMessageAsRead = (id: string) => {
-    setMessages(prev => prev.map(msg => 
-      msg.id === id ? { ...msg, read: true } : msg
-    ));
-  };
-
-  const handleDeleteMessage = (id: string) => {
-    setMessages(prev => prev.filter(msg => msg.id !== id));
-  };
-  
-  const handleDeleteReview = (id: string) => {
-    setReviews(prev => prev.filter(review => review.id !== id));
-  };
-
-  // Actions pour le Site Public
-  const handleAddOrder = (newOrder: Order) => {
-    setOrders(prev => [newOrder, ...prev]);
-  };
-
-  const handleAddMessage = (msg: ContactMessage) => {
-    setMessages(prev => [msg, ...prev]);
-  };
-
-  const handleAddReview = (review: Review) => {
-    setReviews(prev => [review, ...prev]);
-  };
-
-  const renderPage = () => {
-    switch (currentPage) {
-      case 'home':
-        return (
-          <>
-            <Hero onNavigate={setCurrentPage} />
-            <Menu menuItems={menuItems} onAddOrder={handleAddOrder} />
-            <Services specialties={specialties} />
-            <About image={siteSettings.aboutImage} />
-            <Gallery images={galleryImages} />
-            <Reviews reviews={reviews} onAddReview={handleAddReview} />
-            <Contact onSendMessage={handleAddMessage} settings={siteSettings} />
-          </>
-        );
-      case 'menu':
-        return <Menu menuItems={menuItems} onAddOrder={handleAddOrder} />;
-      case 'about':
-        return <About image={siteSettings.aboutImage} />;
-      case 'services':
-        return <Services specialties={specialties} />;
-      case 'gallery':
-        return <Gallery images={galleryImages} />;
-      case 'reviews':
-        return <Reviews reviews={reviews} onAddReview={handleAddReview} />;
-      case 'contact':
-        return <Contact onSendMessage={handleAddMessage} settings={siteSettings} />;
-      case 'admin':
-        return (
-          <AdminDashboard 
-            orders={orders} 
-            menuItems={menuItems}
-            messages={messages}
-            reviews={reviews}
-            settings={siteSettings}
-            galleryImages={galleryImages}
-            specialties={specialties}
-            onUpdateOrderStatus={updateOrderStatus}
-            onDeleteOrder={handleDeleteOrder}
-            onToggleAvailability={toggleDishAvailability}
-            onUpdateSettings={updateSiteSettings}
-            onUpdateGallery={updateGalleryImages}
-            onUpdateSpecialties={updateSpecialties}
-            onAddDish={handleAddDish}
-            onDeleteDish={handleDeleteDish}
-            onMarkMessageAsRead={handleMarkMessageAsRead}
-            onDeleteMessage={handleDeleteMessage}
-            onDeleteReview={handleDeleteReview}
-            onNavigate={setCurrentPage}
-          />
-        );
-      default:
-        return null;
-    }
+  const handleLogoutWithRedirect = async () => {
+    await props.onLogout();
+    navigate('/');
   };
 
   return (
+    <AdminDashboard
+      {...props}
+      onLogout={handleLogoutWithRedirect}
+      onNavigate={(page: PageView) => navigate(page === 'home' ? '/' : `/${page}`)}
+    />
+  );
+};
+
+// Layout wrapper
+const LayoutWrapper: React.FC<{ children: React.ReactNode; showNavFooter: boolean; siteSettings: SiteSettings; currentPage?: PageView }> = ({ children, showNavFooter, siteSettings, currentPage = 'home' }) => {
+  const navigate = useNavigate();
+  return (
     <div className="min-h-screen bg-brand-cream font-sans text-brand-brown selection:bg-brand-orange selection:text-white">
-      {currentPage !== 'admin' && (
-        <Navbar 
-          currentPage={currentPage} 
-          onNavigate={setCurrentPage} 
+      {showNavFooter && (
+        <Navbar
+          currentPage={currentPage}
+          onNavigate={(page) => navigate(page === 'home' ? '/' : `/${page}`)}
           phoneNumber={siteSettings.phoneNumber}
         />
       )}
-      
+
       <main className="animate-fade-in">
-        {renderPage()}
+        {children}
       </main>
 
-      {currentPage !== 'admin' && (
-        <Footer 
-          onNavigate={setCurrentPage} 
+      {showNavFooter && (
+        <Footer
+          onNavigate={(page) => navigate(page === 'home' ? '/' : `/${page}`)}
           settings={siteSettings}
         />
       )}
     </div>
+  );
+};
+
+const App: React.FC = () => {
+  const [isLoading, setIsLoading] = useState(true);
+  const [user, setUser] = useState<any>(null);
+
+  const [menuItems, setMenuItems] = useState<Dish[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [messages, setMessages] = useState<ContactMessage[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [siteSettings, setSiteSettings] = useState<SiteSettings>(INITIAL_SETTINGS);
+  const [galleryImages, setGalleryImages] = useState<string[]>([]);
+  const [specialties, setSpecialties] = useState<SpecialtyItem[]>([]);
+
+  useEffect(() => {
+    const loadData = async () => {
+      setIsLoading(true);
+
+      try {
+        const currentUser = await getCurrentUser();
+        setUser(currentUser);
+      } catch (error) {
+        console.error("Erreur lors de la récupération de l'utilisateur:", error);
+      }
+
+      // Load each data type independently with error handling
+      try {
+        const dishesData = await fetchDishes();
+        setMenuItems(dishesData);
+      } catch (error) {
+        console.error("Erreur lors du chargement des plats:", error);
+      }
+
+      try {
+        const ordersData = await fetchOrders();
+        setOrders(ordersData);
+      } catch (error) {
+        console.error("Erreur lors du chargement des commandes:", error);
+      }
+
+      try {
+        const messagesData = await fetchMessages();
+        setMessages(messagesData);
+      } catch (error) {
+        console.error("Erreur lors du chargement des messages:", error);
+      }
+
+      try {
+        const reviewsData = await fetchReviews();
+        setReviews(reviewsData);
+      } catch (error) {
+        console.error("Erreur lors du chargement des avis:", error);
+      }
+
+      try {
+        const specialtiesData = await fetchSpecialties();
+        setSpecialties(specialtiesData);
+      } catch (error) {
+        console.error("Erreur lors du chargement des spécialités:", error);
+      }
+
+      try {
+        const settingsData = await fetchSettings();
+        if (settingsData) setSiteSettings(settingsData);
+      } catch (error) {
+        console.error("Erreur lors du chargement des paramètres:", error);
+      }
+
+      try {
+        const galleryData = await fetchGalleryImages();
+        setGalleryImages(galleryData);
+      } catch (error) {
+        console.error("Erreur lors du chargement de la galerie:", error);
+      }
+
+      setIsLoading(false);
+    };
+
+    loadData();
+  }, []);
+
+  // Real-time subscriptions
+  useEffect(() => {
+    // Subscribe to orders changes
+    const ordersChannel = subscribeToOrders(
+      (newOrder) => {
+        // On INSERT: add new order to the top of the list
+        setOrders(prev => [newOrder, ...prev]);
+      },
+      (updatedOrder) => {
+        // On UPDATE: update the order in the list
+        setOrders(prev => prev.map(order => order.id === updatedOrder.id ? updatedOrder : order));
+      },
+      (deletedId) => {
+        // On DELETE: remove the order from the list
+        setOrders(prev => prev.filter(order => order.id !== deletedId));
+      }
+    );
+
+    // Subscribe to messages changes
+    const messagesChannel = subscribeToMessages(
+      (newMessage) => {
+        // On INSERT: add new message to the top of the list
+        setMessages(prev => [newMessage, ...prev]);
+      },
+      (updatedMessage) => {
+        // On UPDATE: update the message in the list
+        setMessages(prev => prev.map(msg => msg.id === updatedMessage.id ? updatedMessage : msg));
+      },
+      (deletedId) => {
+        // On DELETE: remove the message from the list
+        setMessages(prev => prev.filter(msg => msg.id !== deletedId));
+      }
+    );
+
+    // Subscribe to reviews changes
+    const reviewsChannel = subscribeToReviews(
+      (newReview) => {
+        // On INSERT: add new review to the top of the list
+        setReviews(prev => [newReview, ...prev]);
+      },
+      (updatedReview) => {
+        // On UPDATE: update the review in the list
+        setReviews(prev => prev.map(review => review.id === updatedReview.id ? updatedReview : review));
+      },
+      (deletedId) => {
+        // On DELETE: remove the review from the list
+        setReviews(prev => prev.filter(review => review.id !== deletedId));
+      }
+    );
+
+    // Cleanup function: unsubscribe when component unmounts
+    return () => {
+      ordersChannel.unsubscribe();
+      messagesChannel.unsubscribe();
+      reviewsChannel.unsubscribe();
+    };
+  }, []);
+
+  const toggleDishAvailability = async (id: string) => {
+    const item = menuItems.find(i => i.id === id);
+    if (!item) return;
+    try {
+      await updateDishAvailability(id, !item.available);
+      setMenuItems(prev => prev.map(i => i.id === id ? { ...i, available: !i.available } : i));
+    } catch (error) {
+      console.error("Error updating availability:", error);
+    }
+  };
+
+  const handleUpdateOrderStatus = async (orderId: string, status: OrderStatus) => {
+    try {
+      await updateOrderStatus(orderId, status);
+      setOrders(prev => prev.map(order => order.id === orderId ? { ...order, status } : order));
+    } catch (error) {
+      console.error("Error updating order status:", error);
+    }
+  };
+
+  const handleDeleteOrder = async (id: string) => {
+    try {
+      await deleteOrder(id);
+      setOrders(prev => prev.filter(order => order.id !== id));
+    } catch (error) {
+      console.error("Error deleting order:", error);
+    }
+  };
+
+  const handleUpdateSiteSettings = async (newSettings: SiteSettings) => {
+    try {
+      await updateSettings(newSettings);
+      setSiteSettings(newSettings);
+    } catch (error) {
+      console.error("Error updating settings:", error);
+    }
+  };
+
+  const updateGalleryImages = async (newImages: string[]) => {
+    // Déterminer les images ajoutées et supprimées
+    const added = newImages.filter(img => !galleryImages.includes(img));
+    const removed = galleryImages.filter(img => !newImages.includes(img));
+
+    try {
+      // Ajouter les nouvelles images
+      for (const url of added) {
+        await addGalleryImage(url);
+      }
+
+      // Supprimer les images retirées
+      for (const url of removed) {
+        await deleteGalleryImage(url);
+      }
+
+      // Mettre à jour l'état local
+      setGalleryImages(newImages);
+    } catch (error) {
+      console.error("Erreur lors de la mise à jour de la galerie:", error);
+      alert("Erreur lors de la mise à jour de la galerie");
+    }
+  };
+
+  const handleAddSpecialty = async (specialty: Omit<SpecialtyItem, 'id'>) => {
+    try {
+      const createdSpecialty = await createSpecialty(specialty);
+      setSpecialties(prev => [...prev, createdSpecialty]);
+    } catch (error) {
+      console.error("Error adding specialty:", error);
+      alert("Erreur lors de l'ajout de la spécialité");
+    }
+  };
+
+  const handleDeleteSpecialty = async (id: string) => {
+    try {
+      await deleteSpecialty(id);
+      setSpecialties(prev => prev.filter(s => s.id !== id));
+    } catch (error) {
+      console.error("Error deleting specialty:", error);
+      alert("Erreur lors de la suppression");
+    }
+  };
+
+  const handleAddDish = async (newDish: Dish) => {
+    try {
+      const { id, ...dishData } = newDish;
+      const createdDish = await createDish(dishData);
+      setMenuItems(prev => [createdDish, ...prev]);
+    } catch (error) {
+      console.error("Error adding dish:", error);
+    }
+  };
+
+  const handleDeleteDish = async (id: string) => {
+    try {
+      await deleteDish(id);
+      setMenuItems(prev => prev.filter(item => item.id !== id));
+    } catch (error) {
+      console.error("Error deleting dish:", error);
+    }
+  };
+
+  const handleMarkMessageAsRead = async (id: string) => {
+    try {
+      await markMessageAsRead(id);
+      setMessages(prev => prev.map(msg => msg.id === id ? { ...msg, read: true } : msg));
+    } catch (error) {
+      console.error("Error marking message as read:", error);
+    }
+  };
+
+  const handleDeleteMessage = async (id: string) => {
+    try {
+      await deleteMessage(id);
+      setMessages(prev => prev.filter(msg => msg.id !== id));
+    } catch (error) {
+      console.error("Error deleting message:", error);
+    }
+  };
+
+  const handleDeleteReview = async (id: string) => {
+    try {
+      await deleteReview(id);
+      setReviews(prev => prev.filter(review => review.id !== id));
+    } catch (error) {
+      console.error("Error deleting review:", error);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      setUser(null);
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
+  };
+
+  const handleLoginSuccess = async () => {
+    const currentUser = await getCurrentUser();
+    setUser(currentUser);
+  };
+
+  const handleAddOrder = async (newOrder: Order) => {
+    try {
+      const { id, ...orderData } = newOrder;
+      const createdOrder = await createOrder(orderData);
+      setOrders(prev => [createdOrder, ...prev]);
+      alert("Commande passée avec succès !");
+    } catch (error) {
+      console.error("Error creating order:", error);
+      alert("Erreur lors de la commande. Veuillez réessayer.");
+    }
+  };
+
+  const handleAddMessage = async (msg: ContactMessage) => {
+    try {
+      const { id, read, date, ...msgData } = msg;
+      const createdMsg = await createMessage(msgData);
+      setMessages(prev => [createdMsg, ...prev]);
+      alert("Message envoyé !");
+    } catch (error) {
+      console.error("Error sending message:", error);
+      alert("Erreur lors de l'envoi du message.");
+    }
+  };
+
+  const handleAddReview = async (review: Review) => {
+    try {
+      const { id, date, ...reviewData } = review;
+      const createdReview = await createReview(reviewData);
+      setReviews(prev => [createdReview, ...prev]);
+    } catch (error) {
+      console.error("Error adding review:", error);
+    }
+  };
+
+  if (isLoading) {
+    return <div className="min-h-screen flex items-center justify-center text-brand-brown">Chargement...</div>;
+  }
+
+  return (
+    <BrowserRouter>
+      <Suspense fallback={
+        <div className="min-h-screen flex items-center justify-center bg-brand-cream">
+          <div className="text-center">
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-brand-orange mb-4"></div>
+            <p className="text-brand-brown text-xl font-bold">Chargement...</p>
+          </div>
+        </div>
+      }>
+        <Routes>
+          <Route path="/" element={
+            <LayoutWrapper showNavFooter={true} siteSettings={siteSettings} currentPage="home">
+              <HomePage
+                menuItems={menuItems}
+                handleAddOrder={handleAddOrder}
+                specialties={specialties}
+                siteSettings={siteSettings}
+                galleryImages={galleryImages}
+                reviews={reviews}
+                handleAddReview={handleAddReview}
+                handleAddMessage={handleAddMessage}
+              />
+            </LayoutWrapper>
+          } />
+
+          <Route path="/menu" element={
+            <LayoutWrapper showNavFooter={true} siteSettings={siteSettings} currentPage="menu">
+              <Menu menuItems={menuItems} onAddOrder={handleAddOrder} />
+            </LayoutWrapper>
+          } />
+
+          <Route path="/about" element={
+            <LayoutWrapper showNavFooter={true} siteSettings={siteSettings} currentPage="about">
+              <About image={siteSettings.aboutImage} />
+            </LayoutWrapper>
+          } />
+
+          <Route path="/services" element={
+            <LayoutWrapper showNavFooter={true} siteSettings={siteSettings} currentPage="services">
+              <Services specialties={specialties} />
+            </LayoutWrapper>
+          } />
+
+          <Route path="/gallery" element={
+            <LayoutWrapper showNavFooter={true} siteSettings={siteSettings} currentPage="gallery">
+              <Gallery images={galleryImages} />
+            </LayoutWrapper>
+          } />
+
+          <Route path="/reviews" element={
+            <LayoutWrapper showNavFooter={true} siteSettings={siteSettings} currentPage="reviews">
+              <Reviews reviews={reviews} onAddReview={handleAddReview} />
+            </LayoutWrapper>
+          } />
+
+          <Route path="/contact" element={
+            <LayoutWrapper showNavFooter={true} siteSettings={siteSettings} currentPage="contact">
+              <Contact onSendMessage={handleAddMessage} settings={siteSettings} />
+            </LayoutWrapper>
+          } />
+
+          <Route path="/login" element={
+            <LayoutWrapper showNavFooter={false} siteSettings={siteSettings}>
+              <Login onNavigate={(page) => { }} onLoginSuccess={handleLoginSuccess} />
+            </LayoutWrapper>
+          } />
+
+          <Route path="/signup" element={
+            <LayoutWrapper showNavFooter={false} siteSettings={siteSettings}>
+              <Signup onNavigate={(page) => { }} onSignupSuccess={() => { }} />
+            </LayoutWrapper>
+          } />
+
+          <Route path="/admin" element={
+            <LayoutWrapper showNavFooter={false} siteSettings={siteSettings}>
+              <ProtectedAdminRoute user={user} isLoading={isLoading}>
+                <AdminDashboardWrapper
+                  orders={orders}
+                  menuItems={menuItems}
+                  messages={messages}
+                  reviews={reviews}
+                  settings={siteSettings}
+                  galleryImages={galleryImages}
+                  specialties={specialties}
+                  onUpdateOrderStatus={handleUpdateOrderStatus}
+                  onDeleteOrder={handleDeleteOrder}
+                  onToggleAvailability={toggleDishAvailability}
+                  onUpdateSettings={handleUpdateSiteSettings}
+                  onUpdateGallery={updateGalleryImages}
+                  onAddSpecialty={handleAddSpecialty}
+                  onDeleteSpecialty={handleDeleteSpecialty}
+                  onAddDish={handleAddDish}
+                  onDeleteDish={handleDeleteDish}
+                  onMarkMessageAsRead={handleMarkMessageAsRead}
+                  onDeleteMessage={handleDeleteMessage}
+                  onDeleteReview={handleDeleteReview}
+                  onLogout={handleLogout}
+                />
+              </ProtectedAdminRoute>
+            </LayoutWrapper>
+          } />
+        </Routes>
+      </Suspense>
+    </BrowserRouter>
   );
 };
 

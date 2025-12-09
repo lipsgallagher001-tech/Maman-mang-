@@ -1,15 +1,5 @@
 import React from 'react';
-import { 
-  LayoutDashboard, 
-  ShoppingBag, 
-  Utensils, 
-  MessageSquare, 
-  LogOut, 
-  Settings,
-  Image as ImageIcon,
-  ChefHat,
-  Star
-} from 'lucide-react';
+import { LayoutDashboard, ShoppingBag, Utensils, MessageSquare, LogOut, Settings, Image, Star, ChefHat } from 'lucide-react';
 import { PageView } from '../../types';
 
 interface AdminSidebarProps {
@@ -17,90 +7,59 @@ interface AdminSidebarProps {
   setActiveTab: (tab: any) => void;
   pendingOrders: number;
   unreadMessages: number;
+  unreadReviews: number;
   onNavigate: (page: PageView) => void;
 }
 
-const AdminSidebar: React.FC<AdminSidebarProps> = ({ 
-  activeTab, 
-  setActiveTab, 
-  pendingOrders, 
-  unreadMessages, 
-  onNavigate 
+const AdminSidebar: React.FC<AdminSidebarProps> = ({
+  activeTab,
+  setActiveTab,
+  pendingOrders,
+  unreadMessages,
+  unreadReviews,
+  onNavigate
 }) => {
+  const menuItems = [
+    { id: 'overview', label: 'Tableau de bord', icon: LayoutDashboard },
+    { id: 'orders', label: 'Commandes', icon: ShoppingBag, count: pendingOrders },
+    { id: 'menu', label: 'Menu', icon: Utensils },
+    { id: 'expertise', label: 'Savoir-Faire', icon: ChefHat },
+    { id: 'gallery', label: 'Galerie', icon: Image },
+    { id: 'messages', label: 'Messages', icon: MessageSquare, count: unreadMessages },
+    { id: 'reviews', label: 'Avis Clients', icon: Star, count: unreadReviews },
+    { id: 'settings', label: 'Paramètres', icon: Settings },
+  ];
+
   return (
-    <aside className="w-64 bg-brand-brown text-white hidden lg:flex flex-col">
-      <div className="p-6 flex items-center gap-3 border-b border-white/10">
-        <div className="w-10 h-10 bg-brand-orange rounded-full flex items-center justify-center font-bold text-white">M</div>
-        <span className="font-bold text-xl">Admin Panel</span>
+    <aside className="hidden lg:flex flex-col w-64 bg-brand-brown text-white h-screen sticky top-0">
+      <div className="p-6">
+        <h1 className="text-2xl font-bold text-brand-orange">Maman Mangé</h1>
+        <p className="text-sm text-gray-400">Administration</p>
       </div>
-      
-      <nav className="flex-1 p-4 space-y-2">
-        <button 
-          onClick={() => setActiveTab('overview')}
-          className={`flex items-center gap-3 w-full px-4 py-3 rounded-lg transition-colors ${activeTab === 'overview' ? 'bg-brand-orange text-white' : 'hover:bg-white/10 text-gray-300'}`}
-        >
-          <LayoutDashboard size={20} /> Tableau de bord
-        </button>
-        <button 
-          onClick={() => setActiveTab('orders')}
-          className={`flex items-center gap-3 w-full px-4 py-3 rounded-lg transition-colors relative ${activeTab === 'orders' ? 'bg-brand-orange text-white' : 'hover:bg-white/10 text-gray-300'}`}
-        >
-          <div className="relative">
-            <ShoppingBag size={20} />
-            {pendingOrders > 0 && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-brand-brown animate-pulse"></span>}
-          </div>
-           Commandes
-          {pendingOrders > 0 && (
-            <span className="ml-auto bg-red-500 text-white text-xs px-2 py-1 rounded-full font-bold animate-pulse">
-              {pendingOrders}
-            </span>
-          )}
-        </button>
-        <button 
-          onClick={() => setActiveTab('menu')}
-          className={`flex items-center gap-3 w-full px-4 py-3 rounded-lg transition-colors ${activeTab === 'menu' ? 'bg-brand-orange text-white' : 'hover:bg-white/10 text-gray-300'}`}
-        >
-          <Utensils size={20} /> Gestion Menu
-        </button>
-        <button 
-          onClick={() => setActiveTab('expertise')}
-          className={`flex items-center gap-3 w-full px-4 py-3 rounded-lg transition-colors ${activeTab === 'expertise' ? 'bg-brand-orange text-white' : 'hover:bg-white/10 text-gray-300'}`}
-        >
-          <ChefHat size={20} /> Savoir-Faire
-        </button>
-        <button 
-          onClick={() => setActiveTab('gallery')}
-          className={`flex items-center gap-3 w-full px-4 py-3 rounded-lg transition-colors ${activeTab === 'gallery' ? 'bg-brand-orange text-white' : 'hover:bg-white/10 text-gray-300'}`}
-        >
-          <ImageIcon size={20} /> Galerie
-        </button>
-        <button 
-          onClick={() => setActiveTab('messages')}
-          className={`flex items-center gap-3 w-full px-4 py-3 rounded-lg transition-colors relative ${activeTab === 'messages' ? 'bg-brand-orange text-white' : 'hover:bg-white/10 text-gray-300'}`}
-        >
-          <div className="relative">
-            <MessageSquare size={20} />
-            {unreadMessages > 0 && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-brand-brown"></span>}
-          </div>
-          Messages
-          {unreadMessages > 0 && <span className="ml-auto bg-red-500 text-white text-xs px-2 py-1 rounded-full font-bold">{unreadMessages}</span>}
-        </button>
-        <button 
-          onClick={() => setActiveTab('reviews')}
-          className={`flex items-center gap-3 w-full px-4 py-3 rounded-lg transition-colors ${activeTab === 'reviews' ? 'bg-brand-orange text-white' : 'hover:bg-white/10 text-gray-300'}`}
-        >
-          <Star size={20} /> Avis Clients
-        </button>
-        <button 
-          onClick={() => setActiveTab('settings')}
-          className={`flex items-center gap-3 w-full px-4 py-3 rounded-lg transition-colors ${activeTab === 'settings' ? 'bg-brand-orange text-white' : 'hover:bg-white/10 text-gray-300'}`}
-        >
-          <Settings size={20} /> Paramètres
-        </button>
+
+      <nav className="flex-1 px-4 space-y-2 overflow-y-auto">
+        {menuItems.map((item) => (
+          <button
+            key={item.id}
+            onClick={() => setActiveTab(item.id)}
+            className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-colors ${activeTab === item.id ? 'bg-brand-orange text-white' : 'text-gray-300 hover:bg-white/10'
+              }`}
+          >
+            <div className="flex items-center gap-3">
+              <item.icon size={20} />
+              <span>{item.label}</span>
+            </div>
+            {item.count !== undefined && item.count > 0 && (
+              <span className="bg-red-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+                {item.count}
+              </span>
+            )}
+          </button>
+        ))}
       </nav>
 
       <div className="p-4 border-t border-white/10">
-        <button 
+        <button
           onClick={() => onNavigate('home')}
           className="flex items-center gap-3 w-full px-4 py-3 text-red-300 hover:text-red-100 transition-colors"
         >

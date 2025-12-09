@@ -1,8 +1,8 @@
 import React, { useMemo } from 'react';
-import { 
-  ShoppingBag, 
-  TrendingUp, 
-  DollarSign, 
+import {
+  ShoppingBag,
+  TrendingUp,
+  DollarSign,
   Users
 } from 'lucide-react';
 import { Order, ContactMessage } from '../../types';
@@ -39,20 +39,20 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
       const d = new Date(today);
       d.setDate(today.getDate() - i);
       const isToday = i === 0;
-      
+
       let dayRevenue = 0;
 
       if (isToday) {
-         // Calcul RÉEL pour aujourd'hui basé sur les commandes
-         dayRevenue = orders
+        // Calcul RÉEL pour aujourd'hui basé sur les commandes
+        dayRevenue = orders
           .filter(o => o.status !== 'cancelled' && new Date(o.date).toDateString() === d.toDateString())
           .reduce((acc, curr) => acc + curr.totalPrice, 0);
       } else {
-         // Simulation pour les jours passés (pour l'esthétique)
-         // Utilisation d'un algo pseudo-aléatoire stable basé sur la date pour éviter le scintillement
-         const seed = d.getDate() + d.getMonth();
-         // Valeur entre 10 000 et 40 000
-         dayRevenue = 10000 + ((seed * 9999) % 30000); 
+        // Simulation pour les jours passés (pour l'esthétique)
+        // Utilisation d'un algo pseudo-aléatoire stable basé sur la date pour éviter le scintillement
+        const seed = d.getDate() + d.getMonth();
+        // Valeur entre 10 000 et 40 000
+        dayRevenue = 10000 + ((seed * 9999) % 30000);
       }
 
       data.push({
@@ -70,10 +70,10 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
     const height = 200;
     const width = 600;
     const padding = 20;
-    
+
     // On s'assure que maxValue n'est jamais 0 pour éviter la division par zéro
     const maxValue = Math.max(...chartData.map(d => d.value), 5000) * 1.2;
-    
+
     const points = chartData.map((d, i) => {
       const x = (i / (chartData.length - 1)) * (width - 2 * padding) + padding;
       const y = height - ((d.value / maxValue) * (height - 2 * padding)) - padding;
@@ -87,7 +87,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
     `;
 
     return (
-      <div className="w-full overflow-hidden">
+      <div className="w-full h-full overflow-hidden">
         <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full">
           <defs>
             <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
@@ -95,52 +95,52 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
               <stop offset="100%" stopColor="#E07A5F" stopOpacity="0" />
             </linearGradient>
           </defs>
-          
+
           {/* Grille */}
           {[0.25, 0.5, 0.75].map((ratio, i) => (
-             <line key={i} x1={padding} y1={height - (height * ratio)} x2={width - padding} y2={height - (height * ratio)} stroke="#eee" strokeDasharray="4" />
+            <line key={i} x1={padding} y1={height - (height * ratio)} x2={width - padding} y2={height - (height * ratio)} stroke="#eee" strokeDasharray="4" />
           ))}
-          
+
           {/* Zone remplie */}
           <polygon points={fillPoints} fill="url(#chartGradient)" />
-          
+
           {/* Ligne */}
           <polyline points={points} fill="none" stroke="#E07A5F" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-          
+
           {/* Points */}
           {chartData.map((d, i) => {
-             const x = (i / (chartData.length - 1)) * (width - 2 * padding) + padding;
-             const y = height - ((d.value / maxValue) * (height - 2 * padding)) - padding;
-             return (
-                <g key={i} className="group">
-                   {/* Cercle : plus gros et plein si c'est aujourd'hui (donnée réelle) */}
-                   <circle 
-                    cx={x} 
-                    cy={y} 
-                    r={d.isReal ? 6 : 4} 
-                    fill={d.isReal ? "#E07A5F" : "#F2CC8F"} 
-                    stroke="white"
-                    strokeWidth="2"
-                    className="transition-all duration-300 group-hover:r-8" 
-                   />
-                   
-                   {/* Tooltip */}
-                   <g className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
-                      <rect x={x - 45} y={y - 45} width="90" height="35" rx="4" fill="#3D405B" />
-                      <text x={x} y={y - 25} textAnchor="middle" fill="white" fontSize="12" fontWeight="bold">
-                         {d.value.toLocaleString()}F
-                      </text>
-                      <text x={x} y={y - 13} textAnchor="middle" fill="#ccc" fontSize="10">
-                         {d.isReal ? "(Auj.)" : "(Simulé)"}
-                      </text>
-                   </g>
-                   
-                   {/* Label Axe X */}
-                   <text x={x} y={height - 2} textAnchor="middle" fill={d.isReal ? "#E07A5F" : "#888"} fontWeight={d.isReal ? "bold" : "normal"} fontSize="12">
-                     {d.label}
-                   </text>
+            const x = (i / (chartData.length - 1)) * (width - 2 * padding) + padding;
+            const y = height - ((d.value / maxValue) * (height - 2 * padding)) - padding;
+            return (
+              <g key={i} className="group">
+                {/* Cercle : plus gros et plein si c'est aujourd'hui (donnée réelle) */}
+                <circle
+                  cx={x}
+                  cy={y}
+                  r={d.isReal ? 6 : 4}
+                  fill={d.isReal ? "#E07A5F" : "#F2CC8F"}
+                  stroke="white"
+                  strokeWidth="2"
+                  className="transition-all duration-300 group-hover:r-8"
+                />
+
+                {/* Tooltip */}
+                <g className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none">
+                  <rect x={x - 45} y={y - 45} width="90" height="35" rx="4" fill="#3D405B" />
+                  <text x={x} y={y - 25} textAnchor="middle" fill="white" fontSize="12" fontWeight="bold">
+                    {d.value.toLocaleString()}F
+                  </text>
+                  <text x={x} y={y - 13} textAnchor="middle" fill="#ccc" fontSize="10">
+                    {d.isReal ? "(Auj.)" : "(Simulé)"}
+                  </text>
                 </g>
-             );
+
+                {/* Label Axe X */}
+                <text x={x} y={height - 2} textAnchor="middle" fill={d.isReal ? "#E07A5F" : "#888"} fontWeight={d.isReal ? "bold" : "normal"} fontSize="12">
+                  {d.label}
+                </text>
+              </g>
+            );
           })}
         </svg>
       </div>
@@ -150,7 +150,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
   return (
     <div className="space-y-6 animate-fade-in">
       <h2 className="text-2xl font-bold text-brand-brown mb-6">Aperçu des Performances</h2>
-      
+
       {/* Cartes Statuts */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
@@ -161,7 +161,7 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
           <h3 className="text-gray-500 text-sm">Chiffre d'Affaires Global</h3>
           <p className="text-2xl font-bold text-brand-brown">{totalRevenue.toLocaleString()} FCFA</p>
         </div>
-        
+
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
           <div className="flex justify-between items-start mb-4">
             <div className="p-3 bg-blue-100 text-blue-600 rounded-lg"><ShoppingBag /></div>
@@ -198,8 +198,8 @@ const AdminOverview: React.FC<AdminOverviewProps> = ({
           </h3>
           <div className="text-xs text-gray-400 bg-gray-50 px-2 py-1 rounded border">7 derniers jours</div>
         </div>
-        <div className="w-full aspect-[2/1] md:aspect-[3/1] lg:aspect-[4/1] max-h-64">
-           <RevenueChart />
+        <div className="w-full aspect-[2/1] md:aspect-[3/1] lg:aspect-[4/1] max-h-64 overflow-hidden">
+          <RevenueChart />
         </div>
         <p className="text-xs text-center text-gray-400 mt-2 italic">Le point le plus à droite représente l'activité réelle d'aujourd'hui.</p>
       </div>

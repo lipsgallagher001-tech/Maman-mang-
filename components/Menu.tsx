@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Dish, Order } from '../types';
-import MamansConseil from './MamansConseil';
 import OrderModal from './OrderModal';
 
 interface MenuProps {
@@ -8,11 +8,34 @@ interface MenuProps {
   onAddOrder: (order: Order) => void;
 }
 
+const ITEMS_PER_PAGE = 9; // 3 colonnes x 3 lignes
+
 const Menu: React.FC<MenuProps> = ({ menuItems, onAddOrder }) => {
   const [selectedDish, setSelectedDish] = useState<Dish | null>(null);
+  const [currentPage, setCurrentPage] = useState(0);
 
   // Filtrer uniquement les plats disponibles pour les clients
   const availableItems = menuItems.filter(item => item.available);
+
+  // Pagination
+  const startIndex = currentPage * ITEMS_PER_PAGE;
+  const visibleItems = availableItems.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+  const totalPages = Math.ceil(availableItems.length / ITEMS_PER_PAGE);
+
+  const canGoPrev = currentPage > 0;
+  const canGoNext = currentPage < totalPages - 1;
+
+  const handlePrev = () => {
+    if (canGoPrev) {
+      setCurrentPage(prev => prev - 1);
+    }
+  };
+
+  const handleNext = () => {
+    if (canGoNext) {
+      setCurrentPage(prev => prev + 1);
+    }
+  };
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
@@ -23,43 +46,77 @@ const Menu: React.FC<MenuProps> = ({ menuItems, onAddOrder }) => {
         </p>
       </div>
 
-      <MamansConseil menu={availableItems} />
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {availableItems.map((item) => (
-          <div key={item.id} className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300 flex flex-col h-full animate-fade-in">
-            <div className="h-48 overflow-hidden relative group">
-              <img 
-                src={item.image} 
-                alt={item.name} 
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-              />
-            </div>
-            <div className="p-6 flex-1 flex flex-col justify-between">
-              <div>
-                <h3 className="text-xl font-bold text-brand-brown mb-2">{item.name}</h3>
-                <p className="text-gray-600 text-sm mb-4 line-clamp-2">{item.description}</p>
+      {availableItems.length === 0 ? (
+        <div className="col-span-full text-center py-12 text-gray-500 bg-white rounded-lg border-2 border-dashed border-gray-300">
+          <p className="text-xl">Tout a été dévoré ! Maman retourne en cuisine pour demain.</p>
+        </div>
+      ) : (
+        <div className="relative">
+          {/* Grid 3x3 */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {visibleItems.map((item) => (
+              <div key={item.id} className="bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-shadow duration-300 flex flex-col h-full animate-fade-in">
+                <div className="h-48 overflow-hidden relative group">
+                  <img
+                    src={item.image}
+                    alt={item.name}
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                  />
+                </div>
+                <div className="p-6 flex-1 flex flex-col justify-between">
+                  <div>
+                    <h3 className="text-xl font-bold text-brand-brown mb-2">{item.name}</h3>
+                    <p className="text-gray-600 text-sm mb-4 line-clamp-2">{item.description}</p>
+                  </div>
+                  <button
+                    onClick={() => setSelectedDish(item)}
+                    className="w-full mt-4 bg-brand-green text-white py-2 rounded-lg hover:bg-brand-brown transition-colors font-medium shadow-md hover:shadow-lg transform active:scale-95 transition-all"
+                  >
+                    Commander
+                  </button>
+                </div>
               </div>
-              <button 
-                onClick={() => setSelectedDish(item)}
-                className="w-full mt-4 bg-brand-green text-white py-2 rounded-lg hover:bg-brand-brown transition-colors font-medium shadow-md hover:shadow-lg transform active:scale-95 transition-all"
+            ))}
+          </div>
+
+          {/* Navigation */}
+          {availableItems.length > ITEMS_PER_PAGE && (
+            <div className="flex items-center justify-center gap-4 mt-12">
+              <button
+                onClick={handlePrev}
+                disabled={!canGoPrev}
+                className={`p-3 rounded-full border-2 transition-all ${canGoPrev
+                    ? 'border-brand-orange text-brand-orange hover:bg-brand-orange hover:text-white shadow-md'
+                    : 'border-gray-300 text-gray-400 cursor-not-allowed'
+                  }`}
+                aria-label="Plats précédents"
               >
-                Commander
+                <ChevronLeft size={24} />
+              </button>
+
+              <span className="text-brand-brown text-sm font-medium px-4">
+                Page {currentPage + 1} / {totalPages}
+              </span>
+
+              <button
+                onClick={handleNext}
+                disabled={!canGoNext}
+                className={`p-3 rounded-full border-2 transition-all ${canGoNext
+                    ? 'border-brand-orange text-brand-orange hover:bg-brand-orange hover:text-white shadow-md'
+                    : 'border-gray-300 text-gray-400 cursor-not-allowed'
+                  }`}
+                aria-label="Plats suivants"
+              >
+                <ChevronRight size={24} />
               </button>
             </div>
-          </div>
-        ))}
-        
-        {availableItems.length === 0 && (
-          <div className="col-span-full text-center py-12 text-gray-500 bg-white rounded-lg border-2 border-dashed border-gray-300">
-            <p className="text-xl">Tout a été dévoré ! Maman retourne en cuisine pour demain.</p>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
+      )}
 
       {selectedDish && (
-        <OrderModal 
-          dish={selectedDish} 
+        <OrderModal
+          dish={selectedDish}
           onClose={() => setSelectedDish(null)}
           onConfirmOrder={onAddOrder}
         />

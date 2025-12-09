@@ -10,7 +10,7 @@ export interface Dish {
   available: boolean; // Nouveau champ pour gérer le stock/disponibilité
 }
 
-export type PageView = 'home' | 'menu' | 'about' | 'services' | 'gallery' | 'contact' | 'reviews' | 'admin';
+export type PageView = 'home' | 'menu' | 'about' | 'services' | 'gallery' | 'contact' | 'reviews' | 'admin' | 'login' | 'signup';
 
 export interface ServiceItem {
   title: string;
@@ -53,9 +53,10 @@ export interface ContactMessage {
 export interface Review {
   id: string;
   author: string;
-  rating: number; // 1 à 5
+  rating: number;
   comment: string;
   date: Date;
+  read?: boolean; // Optional, as it might be added later or used in admin
 }
 
 export interface SiteSettings {
@@ -68,5 +69,5 @@ export interface SiteSettings {
     instagram: string;
     twitter: string;
   };
-  aboutImage: string; // Nouvelle image pour la section À propos
+  aboutImage: string;
 }

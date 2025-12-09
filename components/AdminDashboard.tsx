@@ -26,12 +26,14 @@ interface AdminDashboardProps {
   onToggleAvailability: (id: string) => void;
   onUpdateSettings: (settings: SiteSettings) => void;
   onUpdateGallery: (images: string[]) => void;
-  onUpdateSpecialties: (specialties: SpecialtyItem[]) => void;
+  onAddSpecialty: (specialty: Omit<SpecialtyItem, 'id'>) => void;
+  onDeleteSpecialty: (id: string) => void;
   onAddDish: (dish: Dish) => void;
   onDeleteDish: (id: string) => void;
   onMarkMessageAsRead: (id: string) => void;
   onDeleteMessage: (id: string) => void;
   onDeleteReview: (id: string) => void;
+  onMarkReviewAsRead: (id: string) => void;
   onNavigate: (page: PageView) => void;
 }
 
@@ -47,13 +49,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
           <div className="w-20 h-20 bg-brand-orange rounded-full flex items-center justify-center mx-auto mb-6 text-white font-bold text-3xl">M</div>
           <h2 className="text-2xl font-bold text-brand-brown mb-2">Espace Maman Mangé</h2>
           <p className="text-gray-500 mb-8">Veuillez vous connecter pour gérer le restaurant.</p>
-          <button 
+          <button
             onClick={() => setIsLoggedIn(true)}
             className="w-full bg-brand-green text-white py-3 rounded-lg font-bold hover:bg-brand-brown transition-colors"
           >
             Connexion Administrateur
           </button>
-          <button 
+          <button
             onClick={() => props.onNavigate('home')}
             className="mt-4 text-sm text-gray-400 hover:text-brand-brown underline"
           >
@@ -68,11 +70,12 @@ const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
   const totalRevenue = props.orders.reduce((acc, order) => acc + (order.status !== 'cancelled' ? order.totalPrice : 0), 0);
   const pendingOrders = props.orders.filter(o => o.status === 'pending').length;
   const unreadMessages = props.messages.filter(m => !m.read).length;
-  
-  const averageRating = props.reviews.length > 0 
-    ? (props.reviews.reduce((acc, r) => acc + r.rating, 0) / props.reviews.length).toFixed(1) 
+  const unreadReviews = props.reviews.filter(r => !r.read).length;
+
+  const averageRating = props.reviews.length > 0
+    ? (props.reviews.reduce((acc, r) => acc + r.rating, 0) / props.reviews.length).toFixed(1)
     : 'N/A';
-  
+
   // Plat populaire
   const dishCounts: Record<string, number> = {};
   props.orders.forEach(order => {
@@ -108,12 +111,13 @@ const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
 
   return (
     <div className="flex h-screen bg-gray-100 overflow-hidden font-sans">
-      
-      <AdminSidebar 
+
+      <AdminSidebar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         pendingOrders={pendingOrders}
         unreadMessages={unreadMessages}
+        unreadReviews={unreadReviews}
         onNavigate={props.onNavigate}
       />
 
@@ -137,13 +141,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
             Messages
             {unreadMessages > 0 && <span className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full border border-white"></span>}
           </button>
-          <button onClick={() => setActiveTab('reviews')} className={`px-4 py-2 rounded-full whitespace-nowrap ${activeTab === 'reviews' ? 'bg-brand-orange' : 'bg-white/10'}`}>Avis</button>
+          <button onClick={() => setActiveTab('reviews')} className={`relative px-4 py-2 rounded-full whitespace-nowrap ${activeTab === 'reviews' ? 'bg-brand-orange' : 'bg-white/10'}`}>
+            Avis
+            {unreadReviews > 0 && <span className="absolute top-0 right-0 w-3 h-3 bg-red-500 rounded-full border border-white"></span>}
+          </button>
           <button onClick={() => setActiveTab('settings')} className={`px-4 py-2 rounded-full whitespace-nowrap ${activeTab === 'settings' ? 'bg-brand-orange' : 'bg-white/10'}`}>Paramètres</button>
         </div>
 
         <div className="p-6 md:p-8">
           {activeTab === 'overview' && (
-            <AdminOverview 
+            <AdminOverview
               orders={props.orders}
               messages={props.messages}
               totalRevenue={totalRevenue}
@@ -156,7 +163,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
           )}
 
           {activeTab === 'orders' && (
-            <AdminOrders 
+            <AdminOrders
               orders={props.orders}
               onUpdateOrderStatus={props.onUpdateOrderStatus}
               onDeleteOrder={props.onDeleteOrder}
@@ -167,7 +174,7 @@ const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
           )}
 
           {activeTab === 'menu' && (
-            <AdminMenu 
+            <AdminMenu
               menuItems={props.menuItems}
               onAddDish={props.onAddDish}
               onDeleteDish={props.onDeleteDish}
@@ -176,21 +183,22 @@ const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
           )}
 
           {activeTab === 'expertise' && (
-            <AdminExpertise 
+            <AdminExpertise
               specialties={props.specialties}
-              onUpdateSpecialties={props.onUpdateSpecialties}
+              onAddSpecialty={props.onAddSpecialty}
+              onDeleteSpecialty={props.onDeleteSpecialty}
             />
           )}
 
           {activeTab === 'gallery' && (
-            <AdminGallery 
+            <AdminGallery
               galleryImages={props.galleryImages}
               onUpdateGallery={props.onUpdateGallery}
             />
           )}
 
           {activeTab === 'messages' && (
-            <AdminMessages 
+            <AdminMessages
               messages={props.messages}
               onMarkMessageAsRead={props.onMarkMessageAsRead}
               onDeleteMessage={props.onDeleteMessage}
@@ -199,15 +207,16 @@ const AdminDashboard: React.FC<AdminDashboardProps> = (props) => {
           )}
 
           {activeTab === 'reviews' && (
-            <AdminReviews 
+            <AdminReviews
               reviews={props.reviews}
               onDeleteReview={props.onDeleteReview}
+              onMarkReviewAsRead={props.onMarkReviewAsRead}
               averageRating={averageRating}
             />
           )}
 
           {activeTab === 'settings' && (
-            <AdminSettings 
+            <AdminSettings
               settings={props.settings}
               onUpdateSettings={props.onUpdateSettings}
             />

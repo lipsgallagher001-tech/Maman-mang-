@@ -24,7 +24,7 @@ const Reviews: React.FC<ReviewsProps> = ({ reviews, onAddReview }) => {
     : '5.0';
 
   // Tri des avis (du plus récent au plus ancien)
-  const sortedReviews = [...reviews].sort((a, b) => b.date.getTime() - a.date.getTime());
+  const sortedReviews = [...reviews].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   // Pagination
   const visibleReviews = sortedReviews.slice(startIndex, startIndex + ITEMS_PER_PAGE);
@@ -53,7 +53,7 @@ const Reviews: React.FC<ReviewsProps> = ({ reviews, onAddReview }) => {
     setFormData({ name: '', rating: 5, comment: '' });
     // Revenir à la première page pour voir son avis
     setStartIndex(0);
-    
+
     setTimeout(() => setSubmitted(false), 5000);
   };
 
@@ -68,9 +68,9 @@ const Reviews: React.FC<ReviewsProps> = ({ reviews, onAddReview }) => {
             onClick={() => interactive && setFormData({ ...formData, rating: star })}
             className={`${interactive ? 'cursor-pointer hover:scale-110 transition-transform' : 'cursor-default'}`}
           >
-            <Star 
-              size={interactive ? 24 : 16} 
-              className={`${star <= rating ? 'fill-brand-orange text-brand-orange' : 'text-gray-300'}`} 
+            <Star
+              size={interactive ? 24 : 16}
+              className={`${star <= rating ? 'fill-brand-orange text-brand-orange' : 'text-gray-300'}`}
             />
           </button>
         ))}
@@ -81,7 +81,7 @@ const Reviews: React.FC<ReviewsProps> = ({ reviews, onAddReview }) => {
   return (
     <div className="py-16 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        
+
         {/* Header Section */}
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-bold text-brand-brown mb-4">Le Livre d'Or</h2>
@@ -102,14 +102,14 @@ const Reviews: React.FC<ReviewsProps> = ({ reviews, onAddReview }) => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-          
+
           {/* Reviews List */}
           <div className="lg:col-span-2 flex flex-col justify-between">
             <div className="space-y-6">
               {visibleReviews.length === 0 ? (
-                 <div className="p-8 text-center text-gray-500 border border-dashed rounded-xl">
-                   Soyez le premier à laisser un avis !
-                 </div>
+                <div className="p-8 text-center text-gray-500 border border-dashed rounded-xl">
+                  Soyez le premier à laisser un avis !
+                </div>
               ) : (
                 visibleReviews.map((review) => (
                   <div key={review.id} className="bg-gray-50 p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow animate-fade-in">
@@ -134,28 +134,26 @@ const Reviews: React.FC<ReviewsProps> = ({ reviews, onAddReview }) => {
             {/* Pagination Controls */}
             {reviews.length > ITEMS_PER_PAGE && (
               <div className="flex items-center justify-center gap-4 mt-8 pt-4 border-t border-gray-100">
-                <button 
+                <button
                   onClick={handlePrev}
                   disabled={!hasPrev}
-                  className={`p-2 rounded-full border transition-all ${
-                    hasPrev 
-                      ? 'bg-white border-brand-orange text-brand-orange hover:bg-brand-orange hover:text-white shadow-sm' 
+                  className={`p-2 rounded-full border transition-all ${hasPrev
+                      ? 'bg-white border-brand-orange text-brand-orange hover:bg-brand-orange hover:text-white shadow-sm'
                       : 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed'
-                  }`}
+                    }`}
                 >
                   <ChevronLeft size={24} />
                 </button>
                 <span className="text-sm text-gray-500 font-medium">
                   {startIndex + 1} - {Math.min(startIndex + ITEMS_PER_PAGE, reviews.length)} sur {reviews.length}
                 </span>
-                <button 
+                <button
                   onClick={handleNext}
                   disabled={!hasNext}
-                  className={`p-2 rounded-full border transition-all ${
-                    hasNext 
-                      ? 'bg-white border-brand-orange text-brand-orange hover:bg-brand-orange hover:text-white shadow-sm' 
+                  className={`p-2 rounded-full border transition-all ${hasNext
+                      ? 'bg-white border-brand-orange text-brand-orange hover:bg-brand-orange hover:text-white shadow-sm'
                       : 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed'
-                  }`}
+                    }`}
                 >
                   <ChevronRight size={24} />
                 </button>
@@ -170,7 +168,7 @@ const Reviews: React.FC<ReviewsProps> = ({ reviews, onAddReview }) => {
                 <MessageCircle className="text-brand-orange" size={28} />
                 <h3 className="text-2xl font-bold">Laissez un avis</h3>
               </div>
-              
+
               {submitted ? (
                 <div className="bg-green-500/20 border border-green-500 text-green-100 p-4 rounded-lg text-center animate-fade-in">
                   <p className="font-bold">Merci !</p>
@@ -189,11 +187,11 @@ const Reviews: React.FC<ReviewsProps> = ({ reviews, onAddReview }) => {
                     <label className="block text-sm font-medium text-brand-cream/80 mb-2">Votre nom</label>
                     <div className="relative">
                       <User className="absolute left-3 top-3 text-gray-400" size={18} />
-                      <input 
+                      <input
                         required
-                        type="text" 
+                        type="text"
                         value={formData.name}
-                        onChange={(e) => setFormData({...formData, name: e.target.value})}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                         className="w-full pl-10 pr-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/40 focus:outline-none focus:bg-white/20 focus:border-brand-orange transition-all"
                         placeholder="Comment vous appelez-vous ?"
                       />
@@ -202,18 +200,18 @@ const Reviews: React.FC<ReviewsProps> = ({ reviews, onAddReview }) => {
 
                   <div>
                     <label className="block text-sm font-medium text-brand-cream/80 mb-2">Votre commentaire</label>
-                    <textarea 
+                    <textarea
                       required
                       rows={4}
                       value={formData.comment}
-                      onChange={(e) => setFormData({...formData, comment: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, comment: e.target.value })}
                       className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/40 focus:outline-none focus:bg-white/20 focus:border-brand-orange transition-all resize-none"
                       placeholder="Qu'avez-vous pensé de notre cuisine ?"
                     ></textarea>
                   </div>
 
-                  <button 
-                    type="submit" 
+                  <button
+                    type="submit"
                     className="w-full bg-brand-orange text-white py-3 rounded-lg font-bold hover:bg-white hover:text-brand-brown transition-all duration-300 flex items-center justify-center gap-2 shadow-lg"
                   >
                     Publier mon avis <Send size={18} />
