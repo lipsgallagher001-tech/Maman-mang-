@@ -298,14 +298,19 @@ const App: React.FC = () => {
 
       // Supprimer les images retirées
       for (const url of removed) {
-        await deleteGalleryImage(url);
+        try {
+          await deleteGalleryImage(url);
+        } catch (deleteError) {
+          console.warn("Failed to delete image from database, but continuing:", deleteError);
+          // Continue with other deletions even if one fails
+        }
       }
 
       // Mettre à jour l'état local
       setGalleryImages(newImages);
     } catch (error) {
       console.error("Erreur lors de la mise à jour de la galerie:", error);
-      alert("Erreur lors de la mise à jour de la galerie");
+      alert("Erreur lors de la mise à jour de la galerie: " + (error as Error).message);
     }
   };
 

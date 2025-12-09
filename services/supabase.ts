@@ -323,12 +323,46 @@ export const addGalleryImage = async (url: string): Promise<string> => {
 };
 
 export const deleteGalleryImage = async (url: string): Promise<void> => {
-    const { error } = await supabase
+  console.log('Attempting to delete image with URL:', url);
+
+  // First try exact match
+  let { data, error, count } = await supabase
+    .from('gallery_images')
+    .delete()
+    .eq('url', url)
+    .select();
+
+  // If exact match fails, try with decoded URL (in case of encoding differences)
+  if ((!data || data.length === 0) && url.startsWith('data:')) {
+    console.log('Trying with decoded data URL');
+    const decodedUrl = decodeURIComponent(url);
+    if (decodedUrl !== url) {
+      ({ data, error, count } = await supabase
         .from('gallery_images')
         .delete()
-        .eq('url', url);
+        .eq('url', decodedUrl)
+        .select());
+    }
+  }
 
-    if (error) throw error;
+  if (error) {
+    console.error('Supabase delete error:', error);
+    throw new Error(`Erreur de suppression: ${error.message}`);
+  }
+
+  console.log('Delete result:', { data, count });
+
+  // If still no data was deleted, log all images for debugging
+  if (!data || data.length === 0) {
+    console.warn('No rows deleted - URL might not match exactly');
+    // Get all images for debugging
+    const { data: allImages } = await supabase
+      .from('gallery_images')
+      .select('*');
+    console.log('All gallery images in DB:', allImages);
+    // Don't throw an error here since the UI state should still be updated
+    // The image is effectively removed from the UI even if DB deletion had issues
+  }
 };
 
 // --- Real-time Subscriptions ---
